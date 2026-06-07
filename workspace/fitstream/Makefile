@@ -1,7 +1,7 @@
 # FitStream Makefile
 # Quick commands for development and usage
 
-.PHONY: help setup test lint download-model animate story serve clean
+.PHONY: help setup test lint typecheck check format download-model animate story serve clean precommit-install precommit-run
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -75,7 +75,19 @@ lint:  ## Lint code
 	ruff check fitstream/ tests/
 
 format:  ## Format code
+	ruff format fitstream/ tests/
 	black fitstream/ tests/
+
+typecheck:  ## Static type checking with mypy
+	PYTHONPATH=. python -m mypy fitstream/ --no-error-summary
+
+check: lint typecheck test-fast  ## Run all checks (lint + type + tests)
+
+precommit-install:  ## Install pre-commit hooks
+	pre-commit install
+
+precommit-run:  ## Run pre-commit on all files
+	pre-commit run --all-files
 
 clean:  ## Clean generated files
 	rm -rf outputs/* uploads/* __pycache__ .pytest_cache

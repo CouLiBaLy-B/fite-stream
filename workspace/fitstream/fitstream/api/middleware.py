@@ -52,16 +52,15 @@ class RateLimiter:
         cutoff = time.time() - window
         while timestamps and timestamps[0] < cutoff:
             timestamps.pop(0)
-    
+
     def _cleanup_empty_entries(self) -> None:
-        """Periodically remove client entries that have no active timestamps."""
+        """Remove client entries with no active timestamps, preventing memory leaks."""
         for bucket in [self._requests, self._gen_requests]:
-            empty_clients = [
-                cid for cid, ts in list(bucket.items()) if not ts
-            ]
+            # Must copy keys first since we mutate during iteration
+            empty_clients = [cid for cid, ts in bucket.items() if not ts]
             for cid in empty_clients:
                 del bucket[cid]
-    
+
     def allow(self, client_id: str) -> bool:
         now = time.time()
         timestamps = self._requests[client_id]
@@ -85,14 +84,21 @@ class RateLimiter:
         return True
     
     def get_remaining(self, client_id: str) -> Dict[str, int]:
-        self._cleanup(self._requests[client_id])
-        self._cleanup(self._gen_requests[client_id])
-        # Clean up empty entries to prevent memory leak
+        """Get remaining requests for a client. Triggers cleanup of empty entries."""
+        # Use .get() to avoid defaultdict auto-creating entries on access
+        req_timestamps = self._requests.get(client_id, [])
+        gen_timestamps = self._gen_requests.get(client_id, [])
+        self._cleanup(req_timestamps)
+        self._cleanup(gen_timestamps)
+        # Remove empty entries to prevent memory leak
         self._cleanup_empty_entries()
+        # Re-fetch after potential cleanup
+        req_count = len(self._requests.get(client_id, []))
+        gen_count = len(self._gen_requests.get(client_id, []))
         
         return {
-            "requests_remaining": max(0, self.rpm - len(self._requests[client_id])),
-            "generation_remaining": max(0, self.gen_rpm - len(self._gen_requests[client_id])),
+            "requests_remaining": max(0, self.rpm - req_count),
+            "generation_remaining": max(0, self.gen_rpm - gen_count),
             "reset_in_seconds": 60,
         }
 
