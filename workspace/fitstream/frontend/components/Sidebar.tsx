@@ -9,10 +9,9 @@ import {
   Images, 
   Activity,
   Film,
-  Settings,
-  Command
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { CommandPalette } from "./CommandPalette";
 
 const nav = [
   { href: "/", label: "Home", icon: LayoutDashboard },
@@ -46,11 +45,7 @@ export function Sidebar() {
 
       <div className="p-3 flex-1 overflow-y-auto">
         <div className="mb-4">
-          <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/10 text-[13px] text-muted hover:bg-white/[0.06] transition-colors">
-            <Command className="size-3.5" />
-            <span>Search</span>
-            <span className="ml-auto text-[11px] opacity-60">⌘K</span>
-          </button>
+          <CommandPalette />
         </div>
 
         <nav className="space-y-1">

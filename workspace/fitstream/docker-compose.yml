@@ -1,25 +1,22 @@
 # =============================================================
-# FitStream Docker Compose
+# FitStream Docker Compose v2
+# Frontend Next.js + Backend FastAPI
 # Run with: docker compose up --build
 # =============================================================
 
 services:
-  fitstream:
-    build: .
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: fitstream-api
     ports:
       - "8000:8000"
     volumes:
-      # Persist models (don't re-download on restart)
       - ./models:/app/models
-      # Persist outputs
       - ./outputs:/app/outputs
-      # Persist uploads
       - ./uploads:/app/uploads
-      # Persist job history
       - ./jobs:/app/jobs
-      # Mount frontend for live editing
-      - ./frontend:/app/frontend:ro
     environment:
       - FITSTREAM_DEVICE=cuda
       - FITSTREAM_OUTPUT_DIR=/app/outputs
@@ -38,3 +35,24 @@ services:
       timeout: 10s
       retries: 3
       start_period: 120s
+    networks:
+      - fitstream
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fitstream-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - fitstream
+
+networks:
+  fitstream:
+    driver: bridge
