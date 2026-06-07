@@ -220,6 +220,44 @@ def validate_image_upload(
     return errors
 
 
+def validate_image_dimensions(
+    width: int,
+    height: int,
+    filename: str = "",
+) -> List[ValidationError]:
+    """
+    Validate image dimensions against limits.
+    Call AFTER reading actual dimensions with PIL.
+    """
+    errors = []
+    
+    if width < MIN_IMAGE_DIMENSION or height < MIN_IMAGE_DIMENSION:
+        errors.append(ValidationError(
+            "file",
+            f"Image too small: {width}x{height}. Min: {MIN_IMAGE_DIMENSION}x{MIN_IMAGE_DIMENSION}",
+            "too_small_dimensions",
+        ))
+    
+    if width > MAX_IMAGE_DIMENSION or height > MAX_IMAGE_DIMENSION:
+        errors.append(ValidationError(
+            "file",
+            f"Image too large: {width}x{height}. Max: {MAX_IMAGE_DIMENSION}x{MAX_IMAGE_DIMENSION}",
+            "too_large_dimensions",
+        ))
+    
+    # Check aspect ratio sanity
+    if width > 0 and height > 0:
+        ratio = max(width, height) / min(width, height)
+        if ratio > 20:
+            errors.append(ValidationError(
+                "file",
+                f"Suspicious aspect ratio: {ratio:.1f}:1",
+                "suspicious_aspect",
+            ))
+    
+    return errors
+
+
 def validate_prompt(prompt: str, field_name: str = "prompt") -> List[ValidationError]:
     errors = []
     

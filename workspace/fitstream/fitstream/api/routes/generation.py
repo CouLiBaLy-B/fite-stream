@@ -53,18 +53,24 @@ async def _run_pipeline(
     """
     Generic background task runner for all generation pipelines.
     
-    Uses structured error handling:
+    Uses structured error handling with timeout protection:
     - GPU OOM → GPUError (retryable)
     - Pipeline logic failure → PipelineError (retryable)
+    - Timeout → logged and job failed
     - User input issues → logged with context
     - Unexpected errors → full traceback logged
     """
     from fitstream.core.errors import PipelineError, GPUError, ModelError
     import traceback
+    import concurrent.futures
     
     job_queue.start_job(job_id)
     
-    try:
+    # Use configurable timeout to prevent hung jobs
+    job_timeout = getattr(config.api, "job_timeout", 600)
+    
+    # Execute pipeline in a thread with timeout protection
+    def _execute():
         # Resolve pipeline class
         if pipeline_name not in _PIPELINE_MAP:
             job_queue.fail_job(job_id, f"Unknown pipeline: {pipeline_name}")
@@ -97,6 +103,18 @@ async def _run_pipeline(
                 f"Pipeline {pipeline_name} returned failure for job {job_id}: {error_msg}"
             )
             job_queue.fail_job(job_id, error_msg)
+    
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_execute)
+            future.result(timeout=job_timeout)
+    
+    except concurrent.futures.TimeoutError:
+        logger.error(f"Job {job_id}: Timeout after {job_timeout}s in {pipeline_name}")
+        job_queue.fail_job(
+            job_id,
+            f"Generation timed out after {job_timeout}s. Try reducing quality or resolution.",
+        )
     
     except MemoryError:
         logger.error(f"Job {job_id}: GPU/CPU out of memory during {pipeline_name}")

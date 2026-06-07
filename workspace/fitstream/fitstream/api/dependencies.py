@@ -30,7 +30,7 @@ from loguru import logger
 from fitstream.config import FitStreamConfig, get_config
 from fitstream.core.models.model_manager import ModelManager
 from fitstream.core.job_queue import JobQueue, JobStatus
-from fitstream.core.interfaces import validate_image_upload
+from fitstream.core.interfaces import validate_image_upload, validate_image_dimensions
 from fitstream.api.middleware import rate_limiter, api_auth, metrics
 
 
@@ -141,6 +141,20 @@ async def save_upload(
         if errors:
             messages = "; ".join(e.message for e in errors)
             raise HTTPException(400, f"Invalid upload: {messages}")
+        
+        # Also validate actual image dimensions
+        try:
+            from PIL import Image
+            from io import BytesIO
+            img = Image.open(BytesIO(content))
+            dim_errors = validate_image_dimensions(img.width, img.height, file.filename or "")
+            if dim_errors:
+                messages = "; ".join(e.message for e in dim_errors)
+                raise HTTPException(400, f"Invalid image: {messages}")
+        except HTTPException:
+            raise
+        except Exception:
+            pass  # If PIL fails, skip dimension validation (binary check already done)
     
     # Save
     job_id = uuid.uuid4().hex[:8]
