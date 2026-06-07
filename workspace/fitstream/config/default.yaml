@@ -1,0 +1,93 @@
+# FitStream — Default Configuration
+# Optimized for RTX 4090 (24GB VRAM)
+
+project:
+  name: "FitStream"
+  version: "0.1.0"
+
+# Model configuration
+models:
+  default: "vace-1.3b"
+  
+  vace_1_3b:
+    name: "Wan2.1-VACE-1.3B-Preview"
+    hf_repo: "Wan-AI/Wan2.1-VACE-1.3B-Preview"
+    local_path: "./models/VACE-Wan2.1-1.3B-Preview"
+    dtype: "bfloat16"
+    device: "cuda"
+    # RTX 4090 optimizations
+    offload_model: true
+    t5_cpu: true
+    enable_vae_slicing: true
+    enable_model_cpu_offload: true
+  
+  vace_14b:
+    name: "Wan2.1-VACE-14B"
+    hf_repo: "Wan-AI/Wan2.1-VACE-14B"
+    local_path: "./models/VACE-Wan2.1-14B"
+    dtype: "bfloat16"
+    device: "cuda"
+    offload_model: true
+    t5_cpu: true
+  
+  loomvideo:
+    name: "LoomVideo"
+    hf_repo: "MSALab/LoomVideo"
+    local_path: "./models/LoomVideo"
+    dtype: "bfloat16"
+    device: "cuda"
+
+# Generation defaults
+generation:
+  # Animation defaults
+  animate:
+    width: 832
+    height: 480
+    num_frames: 49        # ~3 seconds at 16fps
+    fps: 16
+    num_inference_steps: 30
+    guidance_scale: 5.0
+    seed: -1              # -1 = random
+  
+  # Story mode defaults
+  story:
+    scenes_max: 8
+    transition_frames: 8
+    extend_overlap: 4
+  
+  # Quality presets
+  presets:
+    draft:
+      width: 480
+      height: 320
+      num_frames: 33
+      num_inference_steps: 15
+      guidance_scale: 4.0
+    
+    standard:
+      width: 832
+      height: 480
+      num_frames: 49
+      num_inference_steps: 30
+      guidance_scale: 5.0
+    
+    high:
+      width: 832
+      height: 480
+      num_frames: 81
+      num_inference_steps: 50
+      guidance_scale: 6.0
+
+# API configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  max_concurrent_jobs: 2
+  job_timeout: 600  # 10 minutes max
+
+# Output configuration
+output:
+  directory: "./outputs"
+  format: "mp4"
+  codec: "libx264"
+  quality: 23  # CRF value (lower = better, 18-28 range)

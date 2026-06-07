@@ -1,0 +1,65 @@
+# ============================================================
+# FitStream .gitignore
+# ============================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+junit-results.xml
+
+# Linting
+.ruff_cache/
+.mypy_cache/
+
+# ============================================================
+# FitStream-specific (large files / user data)
+# ============================================================
+
+# AI model weights (download via scripts/download_models.py)
+models/
+*.safetensors
+*.bin
+*.ckpt
+*.pt
+*.pth
+
+# Generated outputs
+outputs/
+uploads/
+jobs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local

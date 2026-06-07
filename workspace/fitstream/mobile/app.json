@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "FitStream",
+    "slug": "fitstream",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/icon.png",
+    "scheme": "fitstream",
+    "splash": {
+      "backgroundColor": "#07070e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fitstream.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#07070e"
+      },
+      "package": "com.fitstream.app"
+    }
+  }
+}

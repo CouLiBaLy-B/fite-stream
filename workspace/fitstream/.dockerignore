@@ -1,0 +1,20 @@
+# Models (large files, mount as volume instead)
+models/
+*.safetensors
+*.bin
+*.ckpt
+
+# Outputs
+outputs/
+uploads/
+jobs/
+
+# Dev files
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.git/
+*.md
+!README.md

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FitStream — Monitoring</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#07070e;--glass:rgba(255,255,255,.04);--glass2:rgba(255,255,255,.07);
+  --glass-border:rgba(255,255,255,.08);--glass-hover:rgba(255,255,255,.12);
+  --pr:#8b5cf6;--pr2:#a78bfa;--ac:#06d6a0;--pink:#ec4899;--blue:#3b82f6;--orange:#f59e0b;--red:#ef4444;
+  --tx:#f1f5f9;--tx2:#94a3b8;--tx3:#64748b;
+  --r:12px;--r2:16px;--blur:blur(20px);
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--tx);padding:0}
+.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.12}
+.orb-1{width:400px;height:400px;background:var(--pr);top:-100px;left:-50px}
+.orb-2{width:350px;height:350px;background:var(--ac);bottom:-100px;right:-50px}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;background:rgba(7,7,14,.85);backdrop-filter:var(--blur);border-bottom:1px solid var(--glass-border)}
+.nav-logo{font-size:20px;font-weight:800}.nav-logo span{background:linear-gradient(135deg,var(--pr),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:4px}
+.nav-links a{color:var(--tx2);text-decoration:none;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;transition:all .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--tx);background:var(--glass2)}
+
+.content{position:relative;z-index:1;padding:76px 24px 40px;max-width:1400px;margin:0 auto}
+h1{font-size:24px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+h1 span{font-size:12px;color:var(--tx3);font-weight:400}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--glass);backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--r2);padding:20px;transition:all .2s}
+.card:hover{background:var(--glass-hover)}
+.card h3{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--tx3);margin-bottom:10px;font-weight:700}
+.metric{font-size:32px;font-weight:900;line-height:1}
+.metric.ok{color:var(--ac)}.metric.warn{color:var(--orange)}.metric.err{color:var(--red)}.metric.pr{color:var(--pr2)}
+.sub{font-size:12px;color:var(--tx3);margin-top:4px}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:14px;margin-bottom:20px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+.bar-label{width:90px;color:var(--tx3);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:6px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .5s}
+.bar-val{width:60px;font-size:11px;color:var(--tx3);flex-shrink:0}
+
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:var(--tx3);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--glass-border);text-transform:uppercase;font-size:10px;letter-spacing:.5px}
+td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.02)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+.dot-ok{background:var(--ac)}.dot-pr{background:var(--pr)}.dot-err{background:var(--red)}.dot-warn{background:var(--orange)}
+
+.refresh-bar{font-size:11px;color:var(--tx3);text-align:right;margin-top:12px}
+@media(max-width:640px){.nav-links{display:none}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
+
+<nav>
+  <div class="nav-logo">🎬 <span>FitStream</span></div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="create.html">Create</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="monitor.html" class="active">Monitor</a>
+  </div>
+</nav>
+
+<div class="content">
+<h1>📊 Monitoring <span id="uptime"></span></h1>
+
+<!-- KPIs -->
+<div class="grid" id="kpis">
+  <div class="card"><h3>GPU Memory</h3><div class="metric" id="gpuMem">—</div><div class="sub" id="gpuName">Loading...</div></div>
+  <div class="card"><h3>Requests</h3><div class="metric pr" id="reqs">—</div><div class="sub" id="reqRate">—</div></div>
+  <div class="card"><h3>Generations</h3><div class="metric ok" id="gens">—</div><div class="sub" id="genAvg">—</div></div>
+  <div class="card"><h3>Error Rate</h3><div class="metric" id="errRate">—</div><div class="sub" id="errCount">—</div></div>
+  <div class="card"><h3>Cache</h3><div class="metric" id="cacheRate">—</div><div class="sub" id="cacheInfo">—</div></div>
+  <div class="card"><h3>Active Jobs</h3><div class="metric pr" id="activeJobs">—</div><div class="sub" id="jobsTotal">—</div></div>
+</div>
+
+<!-- Charts -->
+<div class="grid2">
+  <div class="card"><h3>Generations by Type</h3><div id="genBars"></div></div>
+  <div class="card"><h3>Endpoint Latencies (p50 / p95)</h3><div id="latBars"></div></div>
+</div>
+
+<!-- Analytics -->
+<div class="grid2">
+  <div class="card"><h3>Top Styles (24h)</h3><div id="styleBars"></div></div>
+  <div class="card">
+    <h3>Recent Jobs</h3>
+    <table><thead><tr><th>ID</th><th>Type</th><th>Status</th><th>Time</th></tr></thead>
+    <tbody id="jobsTable"><tr><td colspan="4" style="color:var(--tx3)">Loading...</td></tr></tbody></table>
+  </div>
+</div>
+
+<div class="refresh-bar">Auto-refreshes every 5s · <span id="lastUp">—</span></div>
+</div>
+
+<script>
+const API=window.location.origin;
+const $=id=>document.getElementById(id);
+
+async function refresh(){
+  try{
+    // GPU
+    const gpu=await(await fetch(`${API}/gpu`)).json();
+    if(gpu.available){
+      $('gpuMem').textContent=`${gpu.free_gb.toFixed(1)} GB free`;
+      $('gpuMem').className=`metric ${gpu.free_gb>8?'ok':gpu.free_gb>4?'warn':'err'}`;
+      $('gpuName').textContent=`${gpu.gpu_name} · ${gpu.used_gb.toFixed(1)}/${gpu.total_gb.toFixed(0)} GB used`;
+    }else{$('gpuMem').textContent='Offline';$('gpuMem').className='metric err';$('gpuName').textContent='No GPU'}
+
+    // Metrics
+    const m=await(await fetch(`${API}/api/v1/metrics`)).json();
+    $('uptime').textContent=`Uptime: ${m.uptime_human}`;
+    $('reqs').textContent=m.total_requests.toLocaleString();
+    $('reqRate').textContent=`${m.requests_per_minute.toFixed(1)} req/min`;
+    $('gens').textContent=m.total_generations;
+    $('genAvg').textContent=`Avg: ${m.avg_generation_time.toFixed(1)}s`;
+    const er=m.error_rate*100;
+    $('errRate').textContent=`${er.toFixed(1)}%`;$('errRate').className=`metric ${er<1?'ok':er<5?'warn':'err'}`;
+    $('errCount').textContent=`${m.total_errors} errors`;
+
+    // Gen bars
+    const types=m.generations_by_type||{};const maxG=Math.max(...Object.values(types),1);
+    const colors={animate:'var(--pr)',story:'var(--blue)',tryon:'var(--pink)',style:'var(--orange)',compose:'var(--ac)'};
+    $('genBars').innerHTML=Object.entries(types).map(([t,c])=>
+      `<div class="bar-row"><div class="bar-label">${t}</div><div class="bar-track"><div class="bar-fill" style="width:${c/maxG*100}%;background:${colors[t]||'var(--pr)'}"></div></div><div class="bar-val">${c}</div></div>`
+    ).join('')||'<div style="color:var(--tx3);font-size:12px">No data</div>';
+
+    // Latency bars
+    const lats=m.endpoint_latencies||{};
+    $('latBars').innerHTML=Object.entries(lats).slice(0,10).map(([ep,s])=>{
+      const name=ep.replace('/api/v1/','').replace('/health','health');
+      const color=s.p95_ms<100?'var(--ac)':s.p95_ms<500?'var(--orange)':'var(--red)';
+      return`<div class="bar-row"><div class="bar-label" title="${ep}">${name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(s.p95_ms/1000*100,100)}%;background:${color}"></div></div><div class="bar-val">${s.p50_ms.toFixed(0)}/${s.p95_ms.toFixed(0)}</div></div>`;
+    }).join('')||'<div style="color:var(--tx3);font-size:12px">No data</div>';
+
+    // Cache
+    try{const c=await(await fetch(`${API}/api/v1/cache/stats`)).json();
+      $('cacheRate').textContent=`${(c.hit_rate*100).toFixed(0)}%`;$('cacheRate').className=`metric ${c.hit_rate>.5?'ok':'warn'}`;
+      $('cacheInfo').textContent=`${c.entries} entries · ${c.total_size_mb.toFixed(1)} MB`;
+    }catch(e){$('cacheRate').textContent='—';$('cacheInfo').textContent='N/A'}
+
+    // Analytics — top styles
+    try{const a=await(await fetch(`${API}/api/v1/analytics/top-styles?limit=6`)).json();
+      const styles=a.styles||[];const maxS=Math.max(...styles.map(s=>s.count),1);
+      $('styleBars').innerHTML=styles.map(s=>
+        `<div class="bar-row"><div class="bar-label">${s.style}</div><div class="bar-track"><div class="bar-fill" style="width:${s.count/maxS*100}%;background:var(--pink)"></div></div><div class="bar-val">${s.count}</div></div>`
+      ).join('')||'<div style="color:var(--tx3);font-size:12px">No style data</div>';
+    }catch(e){$('styleBars').innerHTML='<div style="color:var(--tx3);font-size:12px">Analytics unavailable</div>'}
+
+    // Jobs
+    const j=await(await fetch(`${API}/api/v1/jobs`)).json();
+    const jobs=j.jobs||[];
+    $('activeJobs').textContent=jobs.filter(j=>j.status==='processing').length;
+    $('jobsTotal').textContent=`${jobs.length} total`;
+    $('jobsTable').innerHTML=jobs.slice(0,12).map(j=>{
+      const d={completed:'dot-ok',failed:'dot-err',processing:'dot-pr',queued:'dot-warn'}[j.status]||'dot-warn';
+      return`<tr><td style="font-family:monospace;font-size:11px">${j.job_id}</td><td>${j.type||'—'}</td><td><span class="dot ${d}"></span>${j.status}</td><td style="color:var(--tx3)">${j.created_at?new Date(j.created_at).toLocaleTimeString():''}</td></tr>`;
+    }).join('')||'<tr><td colspan="4" style="color:var(--tx3)">No jobs</td></tr>';
+
+    $('lastUp').textContent=new Date().toLocaleTimeString();
+  }catch(e){console.error(e)}
+}
+
+refresh();setInterval(refresh,5000);
+</script>
+</body>
+</html>

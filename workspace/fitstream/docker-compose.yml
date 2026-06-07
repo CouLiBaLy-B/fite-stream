@@ -1,0 +1,40 @@
+# =============================================================
+# FitStream Docker Compose
+# Run with: docker compose up --build
+# =============================================================
+
+services:
+  fitstream:
+    build: .
+    container_name: fitstream-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist models (don't re-download on restart)
+      - ./models:/app/models
+      # Persist outputs
+      - ./outputs:/app/outputs
+      # Persist uploads
+      - ./uploads:/app/uploads
+      # Persist job history
+      - ./jobs:/app/jobs
+      # Mount frontend for live editing
+      - ./frontend:/app/frontend:ro
+    environment:
+      - FITSTREAM_DEVICE=cuda
+      - FITSTREAM_OUTPUT_DIR=/app/outputs
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
