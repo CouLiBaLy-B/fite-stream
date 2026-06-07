@@ -92,11 +92,11 @@ class StoryPipeline(BasePipeline):
             seed=getattr(result, 'seed', 0),
         )
 
-    def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
+    def __init__(self, config: Optional[FitStreamConfig] = None, model_manager: Optional[ModelManager] = None) -> None:
         super().__init__(config, model_manager)
         self.animate_pipeline = AnimatePipeline(self.config, self.model_manager)
     
-    def generate(
+    def generate(  # type: ignore[override]
         self,
         image_path: str,
         story: str,
@@ -104,7 +104,7 @@ class StoryPipeline(BasePipeline):
         style: str = "cinematic",
         preset: str = "standard",
         transition: str = "crossfade",
-        max_scenes: int = None,
+        max_scenes: Optional[int] = None,
     ) -> StoryResult:
         """
         Generate a multi-scene story video from text.

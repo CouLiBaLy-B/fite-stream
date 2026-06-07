@@ -157,7 +157,7 @@ class TryOnPipeline(BasePipeline):
             num_frames=getattr(result, 'num_frames', 0),
         )
 
-    def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
+    def __init__(self, config: Optional[FitStreamConfig] = None, model_manager: Optional[ModelManager] = None) -> None:
         super().__init__(config, model_manager)
         self._pipe = None
     
@@ -167,7 +167,7 @@ class TryOnPipeline(BasePipeline):
             self._pipe = self.model_manager.load_vace_diffusers()
         return self._pipe
     
-    def generate(
+    def generate(  # type: ignore[override]
         self,
         person_image: Union[str, Path],
         garment_image: Union[str, Path],

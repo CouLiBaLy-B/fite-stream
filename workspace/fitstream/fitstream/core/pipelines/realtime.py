@@ -124,9 +124,9 @@ class RealTimePipeline(BasePipeline):
 
     def __init__(
         self,
-        config: FitStreamConfig = None,
-        model_manager: ModelManager = None,
-        rt_config: RealTimeConfig = None,
+        config: Optional[FitStreamConfig] = None,
+        model_manager: Optional[ModelManager] = None,
+        rt_config: Optional[RealTimeConfig] = None,
     ) -> None:
         super().__init__(config, model_manager)
         self.rt_config = rt_config or RealTimeConfig()
@@ -322,12 +322,12 @@ class RealTimePipeline(BasePipeline):
             # FC streaming: would yield frames in real-time
             # Placeholder until weights are released
             logger.info("⚡ Streaming frames (FC mode)")
-            yield from self._stream_fallback(image_path, prompt, max_frames, seed)
+            yield from self._stream_fallback(image_path, prompt, max_frames, seed)  # type: ignore[misc]
         else:
             logger.info("⚡ Streaming frames (fallback: batch then yield)")
-            yield from self._stream_fallback(image_path, prompt, max_frames, seed)
+            yield from self._stream_fallback(image_path, prompt, max_frames, seed)  # type: ignore[misc]
     
-    def _stream_fallback(self, image_path, prompt, max_frames, seed) -> None:
+    def _stream_fallback(self, image_path, prompt, max_frames, seed) -> None:  # type: ignore[misc]
         """Fallback streaming: generate batch then yield frames."""
         import tempfile
         

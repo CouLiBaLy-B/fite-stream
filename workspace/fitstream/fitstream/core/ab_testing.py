@@ -101,7 +101,7 @@ class ABTestingPipeline:
     A/B testing for video generation — compare multiple variants side by side.
     """
     
-    def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
+    def __init__(self, config: Optional[FitStreamConfig] = None, model_manager: Optional[ModelManager] = None) -> None:
         self.config = config or get_config()
         self.model_manager = model_manager or ModelManager(self.config)
     

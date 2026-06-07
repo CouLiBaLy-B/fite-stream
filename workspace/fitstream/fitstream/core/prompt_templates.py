@@ -36,8 +36,8 @@ class PromptTemplate:
     name: str
     template: str            # Use {variable} for placeholders
     description: str = ""
-    variables: List[str] = None  # Expected variables
-    tags: List[str] = None
+    variables: Optional[List[str]] = None  # Expected variables
+    tags: Optional[List[str]] = None
     example: str = ""
 
     def __post_init__(self) -> None:

@@ -76,7 +76,7 @@ class LoomNativePipeline(BasePipeline):
             generation_time=getattr(result, 'generation_time', 0),
         )
 
-    def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
+    def __init__(self, config: Optional[FitStreamConfig] = None, model_manager: Optional[ModelManager] = None) -> None:
         super().__init__(config, model_manager)
         self._pipe = None
         self._mode = self._detect_mode()
@@ -112,7 +112,7 @@ class LoomNativePipeline(BasePipeline):
         """Mode."""
         return self._mode
     
-    def generate(
+    def generate(  # type: ignore[override]
         self,
         images: List[Union[str, Path]],
         prompt: str,

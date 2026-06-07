@@ -68,7 +68,7 @@ class ExtendPipeline(BasePipeline):
             num_frames=getattr(result, 'num_frames', 0),
         )
 
-    def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
+    def __init__(self, config: Optional[FitStreamConfig] = None, model_manager: Optional[ModelManager] = None) -> None:
         super().__init__(config, model_manager)
     
     def extend(

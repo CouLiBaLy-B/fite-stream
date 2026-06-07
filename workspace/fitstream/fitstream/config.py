@@ -63,7 +63,7 @@ class FitStreamConfig:
     models_dir: str = "./models"
     
     @classmethod
-    def from_yaml(cls, path: str = None) -> "FitStreamConfig":
+    def from_yaml(cls, path: Optional[str] = None) -> "FitStreamConfig":
         if path is None:
             # Look for config in standard locations
             candidates = [

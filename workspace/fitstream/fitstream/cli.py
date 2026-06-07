@@ -281,7 +281,7 @@ def download(model) -> None:
     
     config = get_config()
     mm = ModelManager(config)
-    mm.download_model(model)
+    mm.download_model(model)  # type: ignore[attr-defined]
     
     console.print(f"[bold green]✅ Model {model} ready![/bold green]")
 

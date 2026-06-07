@@ -86,7 +86,7 @@ class AnimatePipeline(BasePipeline):
             pipeline=self.pipeline_name,
         )
     
-    def generate(
+    def generate(  # type: ignore[override]
         self,
         image_path: Union[str, Path],
         prompt: str,

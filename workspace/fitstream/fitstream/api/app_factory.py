@@ -16,6 +16,7 @@ Usage:
 from contextlib import asynccontextmanager
 import os
 from pathlib import Path
+from typing import AsyncIterator
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
@@ -61,7 +62,7 @@ def create_app() -> FastAPI:
     """
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI) -> None:
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.info(f"FitStream API v{__version__} starting")
         yield
         logger.info("FitStream API shutting down gracefully")

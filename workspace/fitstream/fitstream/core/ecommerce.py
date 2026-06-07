@@ -249,7 +249,7 @@ class ECommerceConnector:
         
         logger.info(f"🛒 Batch generating {len(pending)} product videos...")
         
-        results = {"generated": 0, "failed": 0, "products": []}
+        results: dict[str, Any] = {"generated": 0, "failed": 0, "products": []}
         
         for product in pending:
             video_path = self.generate_product_video(

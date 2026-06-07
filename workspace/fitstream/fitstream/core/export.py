@@ -204,7 +204,7 @@ class ExportPipeline:
             try:
                 font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
             except (IOError, OSError):
-                font = ImageFont.load_default()
+                font = ImageFont.load_default()  # type: ignore[assignment]
             
             for i, frame_idx in enumerate(indices):
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)

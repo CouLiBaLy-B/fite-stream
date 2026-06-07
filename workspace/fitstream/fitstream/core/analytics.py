@@ -110,7 +110,7 @@ class AnalyticsEngine:
         p95_time = gen_times_sorted[int(len(gen_times_sorted) * 0.95)] if len(gen_times_sorted) > 1 else 0
         
         # Hourly distribution
-        hourly = defaultdict(int)
+        hourly: Dict[str, int] = defaultdict(int)
         for e in recent:
             hour = datetime.fromtimestamp(e.timestamp).strftime("%Y-%m-%d %H:00")
             hourly[hour] += 1

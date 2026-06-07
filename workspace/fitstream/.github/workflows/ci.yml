@@ -27,13 +27,16 @@ jobs:
           python-version: "3.12"
 
       - name: Install lint tools
-        run: pip install ruff black
+        run: pip install ruff black mypy types-Pillow types-PyYAML types-requests
 
       - name: Ruff lint
         run: ruff check fitstream/ tests/ --output-format=github
 
       - name: Black format check
         run: black --check --diff fitstream/ tests/
+
+      - name: Mypy static type check
+        run: PYTHONPATH=. python -m mypy fitstream/ --no-error-summary
 
   # ──────────────────────────────────────────────────
   # Job 2: Unit & Integration Tests

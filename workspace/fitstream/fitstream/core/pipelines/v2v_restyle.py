@@ -96,7 +96,7 @@ class V2VRestylePipeline(BasePipeline):
         "comic": 0.75, "cyberpunk": 0.8, "ukiyo_e": 0.8,
     }
     
-    def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
+    def __init__(self, config: Optional[FitStreamConfig] = None, model_manager: Optional[ModelManager] = None) -> None:
         super().__init__(config, model_manager)
     
     def restyle(

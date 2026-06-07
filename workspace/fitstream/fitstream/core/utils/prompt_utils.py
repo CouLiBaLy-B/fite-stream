@@ -4,7 +4,7 @@ Handles prompt enhancement, story splitting, and narrative structuring.
 """
 
 import re
-from typing import List, Dict, Optional
+from typing import Any, List, Dict, Optional
 from dataclasses import dataclass
 from loguru import logger
 
@@ -134,7 +134,7 @@ def _parse_freeform_story(
     # Limit to max_scenes
     if len(sentences) > max_scenes:
         # Merge some sentences to fit within limit
-        merged = []
+        merged: list[str] = []
         per_scene = len(sentences) / max_scenes
         idx = 0.0
         while idx < len(sentences) and len(merged) < max_scenes:
@@ -144,7 +144,7 @@ def _parse_freeform_story(
             idx = end
         sentences = merged
     
-    scenes = []
+    scenes: list[Scene] = []
     for i, sentence in enumerate(sentences):
         prompt = sentence.strip().rstrip('.')
         
@@ -188,7 +188,7 @@ def _parse_structured_story(
 ) -> List[Scene]:
     """Parse structured scene format."""
     blocks = text.split("---")
-    scenes = []
+    scenes: list[Scene] = []
     
     for block in blocks:
         block = block.strip()
