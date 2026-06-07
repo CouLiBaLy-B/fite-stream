@@ -1,8 +1,7 @@
 """Tests for ExportPipeline."""
-import tempfile, os, pytest
-from PIL import Image
-import numpy as np
+
 from fitstream.core.export import ExportPipeline, ExportResult
+
 
 class TestExportResult:
     def test_success(self):
@@ -14,9 +13,12 @@ class TestExportResult:
         assert r.file_size_mb == 2.5
 
     def test_failure(self):
-        r = ExportResult(output_path="", format="gif", file_size_mb=0.0, success=False, error="codec missing")
+        r = ExportResult(
+            output_path="", format="gif", file_size_mb=0.0, success=False, error="codec missing"
+        )
         assert r.success is False
         assert r.error == "codec missing"
+
 
 class TestExportPipeline:
     def test_init(self):
@@ -25,10 +27,10 @@ class TestExportPipeline:
 
     def test_export_formats_known(self):
         ep = ExportPipeline()
-        assert hasattr(ep, 'to_gif')
-        assert hasattr(ep, 'to_webm')
-        assert hasattr(ep, 'to_storyboard')
-        assert hasattr(ep, 'to_social')
+        assert hasattr(ep, "to_gif")
+        assert hasattr(ep, "to_webm")
+        assert hasattr(ep, "to_storyboard")
+        assert hasattr(ep, "to_social")
 
     def test_export_missing_file_returns_failure(self):
         ep = ExportPipeline()

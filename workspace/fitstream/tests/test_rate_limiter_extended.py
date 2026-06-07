@@ -1,8 +1,8 @@
 """Tests for RateLimiter — including memory leak fix verification."""
 
 import time
-import pytest
-from fitstream.api.middleware import RateLimiter, APIKeyAuth, APIMetrics
+
+from fitstream.api.middleware import APIKeyAuth, APIMetrics, RateLimiter
 
 
 class TestRateLimiterMemoryLeak:

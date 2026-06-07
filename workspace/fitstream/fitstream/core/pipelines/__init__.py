@@ -16,6 +16,7 @@ def __getattr__(name: str):
     }
     if name in _map:
         import importlib
+
         module = importlib.import_module(_map[name], package=__name__)
         return getattr(module, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

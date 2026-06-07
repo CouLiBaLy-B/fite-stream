@@ -3,27 +3,27 @@ Generation endpoints — /api/v1/animate, /story, /tryon, /compose, /style, /rea
 Each handler: validate → save upload → create job → enqueue background task.
 """
 
-import os
-import shutil
-from typing import Optional, List
-
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from loguru import logger
 
-from fitstream.config import FitStreamConfig
-from fitstream.core.models.model_manager import ModelManager
-from fitstream.core.job_queue import JobQueue
-from fitstream.core.interfaces import validate_prompt
 from fitstream.api.dependencies import (
-    get_app_config, get_model_manager, get_job_queue,
-    require_generation_rate_limit, save_upload, get_upload_dir,
+    get_app_config,
+    get_job_queue,
+    get_model_manager,
+    require_generation_rate_limit,
+    save_upload,
 )
-from fitstream.api.schemas import GenerationResponse, StoryResponse, TryOnResponse, LoomResponse
+from fitstream.api.schemas import GenerationResponse, LoomResponse, StoryResponse, TryOnResponse
+from fitstream.config import FitStreamConfig
+from fitstream.core.interfaces import validate_prompt
+from fitstream.core.job_queue import JobQueue
+from fitstream.core.models.model_manager import ModelManager
 
 router = APIRouter(prefix="/api/v1", tags=["Generation"])
 
 
 # ═══════════ Helpers ═══════════
+
 
 def _validate_or_raise(prompt: str, field: str = "prompt") -> None:
     errors = validate_prompt(prompt, field)
@@ -52,7 +52,7 @@ async def _run_pipeline(
 ) -> None:
     """
     Generic background task runner for all generation pipelines.
-    
+
     Uses structured error handling with timeout protection:
     - GPU OOM → GPUError (retryable)
     - Pipeline logic failure → PipelineError (retryable)
@@ -60,74 +60,80 @@ async def _run_pipeline(
     - User input issues → logged with context
     - Unexpected errors → full traceback logged
     """
-    from fitstream.core.errors import PipelineError, GPUError, ModelError
-    import traceback
     import concurrent.futures
-    
+    import traceback
+
+    from fitstream.core.errors import GPUError, ModelError, PipelineError
+
     job_queue.start_job(job_id)
-    
+
     # Use configurable timeout to prevent hung jobs
     job_timeout = getattr(config.api, "job_timeout", 600)
-    
+
     # Execute pipeline in a thread with timeout protection
     def _execute():
         # Resolve pipeline class
         if pipeline_name not in _PIPELINE_MAP:
             job_queue.fail_job(job_id, f"Unknown pipeline: {pipeline_name}")
             return
-        
+
         module_name, cls_name = _PIPELINE_MAP[pipeline_name]
-        
+
         # Dynamic import (avoids loading torch at module import time)
         import importlib
+
         mod = importlib.import_module(f"fitstream.core.pipelines.{module_name}")
         pipeline_cls = getattr(mod, cls_name)
         pipeline = pipeline_cls(config, model_manager)
         method = getattr(pipeline, pipeline_method)
-        
+
         # Run generation
         result = method(**kwargs)
-        
+
         if result.success:
-            job_queue.complete_job(job_id, video_path=result.video_path, metadata={
-                "generation_time": getattr(result, "generation_time", 0),
-                "num_frames": getattr(result, "num_frames", 0),
-                "duration_seconds": getattr(result, "duration_seconds", 0),
-                "resolution": getattr(result, "resolution", ""),
-                "seed": getattr(result, "seed", 0),
-                "prompt_used": getattr(result, "prompt_used", ""),
-            })
+            job_queue.complete_job(
+                job_id,
+                video_path=result.video_path,
+                metadata={
+                    "generation_time": getattr(result, "generation_time", 0),
+                    "num_frames": getattr(result, "num_frames", 0),
+                    "duration_seconds": getattr(result, "duration_seconds", 0),
+                    "resolution": getattr(result, "resolution", ""),
+                    "seed": getattr(result, "seed", 0),
+                    "prompt_used": getattr(result, "prompt_used", ""),
+                },
+            )
         else:
             error_msg = getattr(result, "error", None) or "Unknown generation error"
             logger.warning(
                 f"Pipeline {pipeline_name} returned failure for job {job_id}: {error_msg}"
             )
             job_queue.fail_job(job_id, error_msg)
-    
+
     try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(_execute)
             future.result(timeout=job_timeout)
-    
+
     except concurrent.futures.TimeoutError:
         logger.error(f"Job {job_id}: Timeout after {job_timeout}s in {pipeline_name}")
         job_queue.fail_job(
             job_id,
             f"Generation timed out after {job_timeout}s. Try reducing quality or resolution.",
         )
-    
+
     except MemoryError:
         logger.error(f"Job {job_id}: GPU/CPU out of memory during {pipeline_name}")
         job_queue.fail_job(job_id, "Out of memory. Try draft quality or lower resolution.")
-    
+
     except FileNotFoundError as e:
         logger.error(f"Job {job_id}: File not found — {e}")
         job_queue.fail_job(job_id, f"Input file not found: {e.filename or str(e)}")
-    
+
     except (PipelineError, GPUError, ModelError) as e:
         logger.error(f"Job {job_id}: {e.error_code} — {e.message}")
         job_queue.fail_job(job_id, e.message)
-    
+
     except Exception as e:
         # Unexpected error — log full traceback for debugging
         tb = traceback.format_exc()
@@ -138,15 +144,18 @@ async def _run_pipeline(
             f"  Traceback:\n{tb}"
         )
         job_queue.fail_job(
-            job_id,
-            f"Internal error ({type(e).__name__}). This has been logged for investigation."
+            job_id, f"Internal error ({type(e).__name__}). This has been logged for investigation."
         )
 
 
 # ═══════════ Animate ═══════════
 
-@router.post("/animate", response_model=GenerationResponse,
-             dependencies=[Depends(require_generation_rate_limit)])
+
+@router.post(
+    "/animate",
+    response_model=GenerationResponse,
+    dependencies=[Depends(require_generation_rate_limit)],
+)
 async def animate(
     background_tasks: BackgroundTasks,
     image: UploadFile = File(..., description="Reference person image"),
@@ -154,8 +163,8 @@ async def animate(
     style: str = Form("cinematic"),
     preset: str = Form("standard"),
     seed: int = Form(-1),
-    num_frames: Optional[int] = Form(None),
-    num_inference_steps: Optional[int] = Form(None),
+    num_frames: int | None = Form(None),
+    num_inference_steps: int | None = Form(None),
     config: FitStreamConfig = Depends(get_app_config),
     models: ModelManager = Depends(get_model_manager),
     jobs: JobQueue = Depends(get_job_queue),
@@ -163,24 +172,42 @@ async def animate(
     """🎬 Generate an animated video from a person's photo + text prompt."""
     _validate_or_raise(prompt)
     image_path = await save_upload(image, prefix="animate_")
-    
-    job = jobs.create_job("animate", prompt=prompt, image_paths=[image_path],
-                          params={"style": style, "preset": preset, "seed": seed})
-    
-    background_tasks.add_task(
-        _run_pipeline, jobs, config, models, job.id, "animate", "generate",
-        {"image_path": image_path, "prompt": prompt, "style": style,
-         "preset": preset, "seed": seed, "num_frames": num_frames,
-         "num_inference_steps": num_inference_steps},
+
+    job = jobs.create_job(
+        "animate",
+        prompt=prompt,
+        image_paths=[image_path],
+        params={"style": style, "preset": preset, "seed": seed},
     )
-    
+
+    background_tasks.add_task(
+        _run_pipeline,
+        jobs,
+        config,
+        models,
+        job.id,
+        "animate",
+        "generate",
+        {
+            "image_path": image_path,
+            "prompt": prompt,
+            "style": style,
+            "preset": preset,
+            "seed": seed,
+            "num_frames": num_frames,
+            "num_inference_steps": num_inference_steps,
+        },
+    )
+
     return GenerationResponse(job_id=job.id, status="queued", prompt_used=prompt)
 
 
 # ═══════════ Story ═══════════
 
-@router.post("/story", response_model=StoryResponse,
-             dependencies=[Depends(require_generation_rate_limit)])
+
+@router.post(
+    "/story", response_model=StoryResponse, dependencies=[Depends(require_generation_rate_limit)]
+)
 async def story(
     background_tasks: BackgroundTasks,
     image: UploadFile = File(...),
@@ -196,23 +223,41 @@ async def story(
     """📖 Generate a multi-scene story video."""
     _validate_or_raise(story, "story")
     image_path = await save_upload(image, prefix="story_")
-    
-    job = jobs.create_job("story", prompt=story, image_paths=[image_path],
-                          params={"style": style, "max_scenes": max_scenes})
-    
-    background_tasks.add_task(
-        _run_pipeline, jobs, config, models, job.id, "story", "generate",
-        {"image_path": image_path, "story": story, "style": style,
-         "preset": preset, "max_scenes": max_scenes, "transition": transition},
+
+    job = jobs.create_job(
+        "story",
+        prompt=story,
+        image_paths=[image_path],
+        params={"style": style, "max_scenes": max_scenes},
     )
-    
+
+    background_tasks.add_task(
+        _run_pipeline,
+        jobs,
+        config,
+        models,
+        job.id,
+        "story",
+        "generate",
+        {
+            "image_path": image_path,
+            "story": story,
+            "style": style,
+            "preset": preset,
+            "max_scenes": max_scenes,
+            "transition": transition,
+        },
+    )
+
     return StoryResponse(job_id=job.id, status="queued")
 
 
 # ═══════════ Try-On ═══════════
 
-@router.post("/tryon", response_model=TryOnResponse,
-             dependencies=[Depends(require_generation_rate_limit)])
+
+@router.post(
+    "/tryon", response_model=TryOnResponse, dependencies=[Depends(require_generation_rate_limit)]
+)
 async def tryon(
     background_tasks: BackgroundTasks,
     person_image: UploadFile = File(...),
@@ -230,22 +275,39 @@ async def tryon(
     """👗 Virtual try-on: person + garment → dressed video."""
     person_path = await save_upload(person_image, prefix="tryon_person_")
     garment_path = await save_upload(garment_image, prefix="tryon_garment_")
-    
-    job = jobs.create_job("tryon", prompt=prompt or "try-on",
-                          image_paths=[person_path, garment_path],
-                          params={"category": category})
-    
-    background_tasks.add_task(
-        _run_pipeline, jobs, config, models, job.id, "tryon", "generate",
-        {"person_image": person_path, "garment_image": garment_path,
-         "prompt": prompt or None, "category": category, "action": action,
-         "style": style, "preset": preset, "seed": seed},
+
+    job = jobs.create_job(
+        "tryon",
+        prompt=prompt or "try-on",
+        image_paths=[person_path, garment_path],
+        params={"category": category},
     )
-    
+
+    background_tasks.add_task(
+        _run_pipeline,
+        jobs,
+        config,
+        models,
+        job.id,
+        "tryon",
+        "generate",
+        {
+            "person_image": person_path,
+            "garment_image": garment_path,
+            "prompt": prompt or None,
+            "category": category,
+            "action": action,
+            "style": style,
+            "preset": preset,
+            "seed": seed,
+        },
+    )
+
     return TryOnResponse(job_id=job.id, status="queued")
 
 
 # ═══════════ Style ═══════════
+
 
 @router.post("/style", dependencies=[Depends(require_generation_rate_limit)])
 async def style_transfer(
@@ -263,26 +325,39 @@ async def style_transfer(
     """🎭 Generate a stylized animation."""
     _validate_or_raise(prompt)
     image_path = await save_upload(image, prefix="style_")
-    
-    job = jobs.create_job("style", prompt=prompt, image_paths=[image_path],
-                          params={"style": style})
-    
+
+    job = jobs.create_job("style", prompt=prompt, image_paths=[image_path], params={"style": style})
+
     background_tasks.add_task(
-        _run_pipeline, jobs, config, models, job.id, "style_transfer", "generate_with_style",
-        {"person_image": image_path, "prompt": prompt, "style": style,
-         "custom_style": custom_style, "preset": preset, "seed": seed},
+        _run_pipeline,
+        jobs,
+        config,
+        models,
+        job.id,
+        "style_transfer",
+        "generate_with_style",
+        {
+            "person_image": image_path,
+            "prompt": prompt,
+            "style": style,
+            "custom_style": custom_style,
+            "preset": preset,
+            "seed": seed,
+        },
     )
-    
+
     return {"job_id": job.id, "status": "queued", "style": style}
 
 
 # ═══════════ Compose ═══════════
 
-@router.post("/compose", response_model=LoomResponse,
-             dependencies=[Depends(require_generation_rate_limit)])
+
+@router.post(
+    "/compose", response_model=LoomResponse, dependencies=[Depends(require_generation_rate_limit)]
+)
 async def compose(
     background_tasks: BackgroundTasks,
-    images: List[UploadFile] = File(..., description="2-8 reference images"),
+    images: list[UploadFile] = File(..., description="2-8 reference images"),
     prompt: str = Form(...),
     style: str = Form("cinematic"),
     seed: int = Form(-1),
@@ -297,23 +372,37 @@ async def compose(
     if len(images) > 8:
         raise HTTPException(400, "Maximum 8 images")
     _validate_or_raise(prompt)
-    
+
     image_paths = [await save_upload(img, prefix="compose_") for img in images]
-    
-    job = jobs.create_job("compose", prompt=prompt, image_paths=image_paths,
-                          params={"num_images": len(image_paths)})
-    
-    background_tasks.add_task(
-        _run_pipeline, jobs, config, models, job.id, "loom", "generate",
-        {"images": image_paths, "prompt": prompt, "style": style,
-         "seed": seed, "num_frames": num_frames},
+
+    job = jobs.create_job(
+        "compose", prompt=prompt, image_paths=image_paths, params={"num_images": len(image_paths)}
     )
-    
-    return LoomResponse(job_id=job.id, status="queued",
-                        num_reference_images=len(image_paths), task="mi2v")
+
+    background_tasks.add_task(
+        _run_pipeline,
+        jobs,
+        config,
+        models,
+        job.id,
+        "loom",
+        "generate",
+        {
+            "images": image_paths,
+            "prompt": prompt,
+            "style": style,
+            "seed": seed,
+            "num_frames": num_frames,
+        },
+    )
+
+    return LoomResponse(
+        job_id=job.id, status="queued", num_reference_images=len(image_paths), task="mi2v"
+    )
 
 
 # ═══════════ Real-Time ═══════════
+
 
 @router.post("/realtime/generate", dependencies=[Depends(require_generation_rate_limit)])
 async def realtime_generate(
@@ -328,14 +417,20 @@ async def realtime_generate(
     """⚡ Fast generation — FashionChameleon when available, fallback otherwise."""
     _validate_or_raise(prompt)
     image_path = await save_upload(image, prefix="rt_")
-    
+
     job = jobs.create_job("realtime", prompt=prompt, image_paths=[image_path])
-    
+
     background_tasks.add_task(
-        _run_pipeline, jobs, config, models, job.id, "realtime", "generate_fast",
+        _run_pipeline,
+        jobs,
+        config,
+        models,
+        job.id,
+        "realtime",
+        "generate_fast",
         {"image_path": image_path, "prompt": prompt, "seed": seed},
     )
-    
+
     return {"job_id": job.id, "status": "queued", "mode": "realtime"}
 
 
@@ -346,4 +441,5 @@ async def realtime_status(
 ):
     """⚡ Check real-time availability."""
     from fitstream.core.pipelines.realtime import RealTimePipeline
+
     return RealTimePipeline(config, models).get_status()

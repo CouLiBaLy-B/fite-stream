@@ -1,24 +1,32 @@
 """Tests for GenerationCache."""
-import tempfile, time, os, pytest
-from fitstream.core.cache import GenerationCache, CacheEntry
+
+import os
+import tempfile
+import time
+
+from fitstream.core.cache import CacheEntry, GenerationCache
+
 
 class TestCacheEntry:
     def test_creation(self):
-        e = CacheEntry(key="abc", video_path="/v.mp4", created_at=time.time(), last_accessed=time.time())
+        e = CacheEntry(
+            key="abc", video_path="/v.mp4", created_at=time.time(), last_accessed=time.time()
+        )
         assert e.key == "abc"
         assert e.video_path == "/v.mp4"
 
     def test_is_expired(self):
         now = time.time()
-        e = CacheEntry(key="k", video_path="/v.mp4", created_at=now-2, last_accessed=now, ttl=1)
+        e = CacheEntry(key="k", video_path="/v.mp4", created_at=now - 2, last_accessed=now, ttl=1)
         assert e.is_expired is True
         e2 = CacheEntry(key="k2", video_path="/v.mp4", created_at=now, last_accessed=now, ttl=86400)
         assert e2.is_expired is False
 
     def test_age_hours(self):
         now = time.time()
-        e = CacheEntry(key="k", video_path="/v.mp4", created_at=now-3600, last_accessed=now)
+        e = CacheEntry(key="k", video_path="/v.mp4", created_at=now - 3600, last_accessed=now)
         assert abs(e.age_hours - 1.0) < 0.1
+
 
 class TestGenerationCache:
     def _make_video(self, d):

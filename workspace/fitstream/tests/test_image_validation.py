@@ -1,12 +1,10 @@
 """Tests for image dimension validation."""
 
-import pytest
 from fitstream.core.interfaces import (
+    MAX_UPLOAD_SIZE_MB,
+    ValidationError,
     validate_image_dimensions,
     validate_image_upload,
-    ValidationError,
-    MAX_UPLOAD_SIZE_MB,
-    ALLOWED_IMAGE_TYPES,
 )
 
 

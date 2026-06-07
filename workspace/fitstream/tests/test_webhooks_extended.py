@@ -1,7 +1,6 @@
 """Tests for the WebhookManager — realistic API surface."""
 
-import pytest
-from fitstream.core.webhooks import webhook_manager, WebhookEndpoint
+from fitstream.core.webhooks import WebhookEndpoint, webhook_manager
 
 
 class TestWebhookEndpoint:

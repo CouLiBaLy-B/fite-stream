@@ -5,26 +5,31 @@ not just specific examples.
 """
 
 import pytest
-from hypothesis import given, strategies as st, settings, assume
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
-from fitstream.core.utils.prompt_utils import enhance_prompt, split_story_to_scenes
-from fitstream.core.pipelines.tryon import detect_garment_category, build_tryon_prompt
-from fitstream.core.pipelines.loom import validate_image_references
-from fitstream.core.pipelines.style_transfer import get_style_prompt, STYLE_PRESETS
-from fitstream.core.interfaces import (
-    validate_image_upload, validate_prompt, validate_generation_params,
-    GenerationRequest, GenerationResult,
-)
-from fitstream.core.errors import (
-    FitStreamError, UserError, GPUError, PipelineError,
-)
-from fitstream.core.i18n import I18n, translate_prompt, SUPPORTED_LANGUAGES
 from fitstream.core.cache import GenerationCache
+from fitstream.core.errors import (
+    GPUError,
+    PipelineError,
+    UserError,
+)
+from fitstream.core.i18n import SUPPORTED_LANGUAGES, I18n
+from fitstream.core.interfaces import (
+    GenerationRequest,
+    GenerationResult,
+    validate_generation_params,
+    validate_image_upload,
+    validate_prompt,
+)
+from fitstream.core.pipelines.loom import validate_image_references
+from fitstream.core.pipelines.style_transfer import STYLE_PRESETS, get_style_prompt
+from fitstream.core.utils.prompt_utils import enhance_prompt, split_story_to_scenes
 
 
 class TestPromptEnhancement:
     """Properties of prompt enhancement."""
-    
+
     @given(prompt=st.text(min_size=1, max_size=200))
     @settings(max_examples=50)
     def test_enhanced_prompt_is_never_empty(self, prompt: str) -> None:
@@ -32,7 +37,7 @@ class TestPromptEnhancement:
         assume(prompt.strip())
         result = enhance_prompt(prompt, style="cinematic")
         assert len(result) > 0
-    
+
     @given(prompt=st.text(min_size=5, max_size=100))
     @settings(max_examples=50)
     def test_enhanced_prompt_contains_original_content(self, prompt: str) -> None:
@@ -44,7 +49,7 @@ class TestPromptEnhancement:
         result_lower = result.lower()
         found = sum(1 for w in original_words if w in result_lower)
         assert found > 0 or len(original_words) == 0
-    
+
     @given(style=st.sampled_from(["cinematic", "photorealistic", "anime", "dreamy", "warm"]))
     def test_style_prefix_always_added(self, style: str) -> None:
         """Every style should add some prefix to the prompt."""
@@ -54,7 +59,7 @@ class TestPromptEnhancement:
 
 class TestStoryParsing:
     """Properties of story → scene splitting."""
-    
+
     @given(num_sentences=st.integers(min_value=1, max_value=10))
     @settings(max_examples=20)
     def test_scene_count_bounded_by_max(self, num_sentences: int) -> None:
@@ -62,7 +67,7 @@ class TestStoryParsing:
         story = ". ".join([f"Scene {i} happens" for i in range(num_sentences)])
         scenes = split_story_to_scenes(story, max_scenes=5, auto_enhance=False)
         assert len(scenes) <= 5
-    
+
     @given(num_sentences=st.integers(min_value=1, max_value=20))
     @settings(max_examples=20)
     def test_scenes_always_have_prompts(self, num_sentences: int) -> None:
@@ -75,21 +80,21 @@ class TestStoryParsing:
 
 class TestInputValidation:
     """Properties of input validation functions."""
-    
+
     @given(size=st.integers(min_value=0, max_value=200_000_000))
     @settings(max_examples=50)
     def test_validation_never_crashes(self, size: int) -> None:
         """Validation should never raise an exception."""
         errors = validate_image_upload("test.jpg", size)
         assert isinstance(errors, list)
-    
+
     @given(prompt=st.text(min_size=0, max_size=5000))
     @settings(max_examples=50)
     def test_prompt_validation_never_crashes(self, prompt: str) -> None:
         """Prompt validation should never raise."""
         errors = validate_prompt(prompt)
         assert isinstance(errors, list)
-    
+
     @given(
         width=st.integers(min_value=-100, max_value=100000),
         height=st.integers(min_value=-100, max_value=100000),
@@ -104,7 +109,7 @@ class TestInputValidation:
 
 class TestErrorHierarchy:
     """Properties of the error type system."""
-    
+
     @given(message=st.text(min_size=1, max_size=200))
     @settings(max_examples=30)
     def test_all_errors_serialize_cleanly(self, message: str) -> None:
@@ -116,7 +121,7 @@ class TestErrorHierarchy:
             assert "error" in d
             assert "message" in d
             assert d["message"] == message
-    
+
     @given(message=st.text(min_size=1, max_size=100))
     def test_pipeline_error_always_retryable(self, message: str) -> None:
         """Pipeline errors should always be marked retryable."""
@@ -126,14 +131,14 @@ class TestErrorHierarchy:
 
 class TestI18n:
     """Properties of internationalization."""
-    
+
     @given(lang=st.sampled_from(SUPPORTED_LANGUAGES))
     def test_all_languages_have_generate_button(self, lang: str) -> None:
         """Every language must have a translation for btn.generate."""
         i18n = I18n(lang)
         result = i18n.t("btn.generate")
         assert result != "btn.generate"  # Not the fallback key
-    
+
     @given(lang=st.text(min_size=1, max_size=5))
     @settings(max_examples=20)
     def test_unsupported_language_falls_back(self, lang: str) -> None:
@@ -146,7 +151,7 @@ class TestI18n:
 
 class TestImageReferences:
     """Properties of @Image N validation."""
-    
+
     @given(
         num_images=st.integers(min_value=1, max_value=10),
         num_refs=st.integers(min_value=0, max_value=15),
@@ -164,7 +169,7 @@ class TestImageReferences:
 
 class TestStylePresets:
     """Properties of style system."""
-    
+
     @given(style=st.sampled_from(list(STYLE_PRESETS.keys())))
     def test_every_preset_produces_longer_prompt(self, style: str) -> None:
         """Applying any style preset must make the prompt longer."""
@@ -175,7 +180,7 @@ class TestStylePresets:
 
 class TestGenerationDataTypes:
     """Properties of request/result data types."""
-    
+
     @given(
         seed=st.integers(min_value=-1, max_value=2**32),
         width=st.integers(min_value=64, max_value=4096),
@@ -188,7 +193,7 @@ class TestGenerationDataTypes:
         assert req.seed == seed
         assert req.width == width
         assert req.height == height
-    
+
     @given(success=st.booleans())
     def test_result_success_flag(self, success: bool) -> None:
         """Result success flag must round-trip correctly."""
@@ -198,7 +203,7 @@ class TestGenerationDataTypes:
 
 class TestCacheKeys:
     """Properties of cache key generation."""
-    
+
     @given(
         prompt1=st.text(min_size=1, max_size=50),
         prompt2=st.text(min_size=1, max_size=50),
@@ -207,11 +212,13 @@ class TestCacheKeys:
     def test_different_prompts_different_keys(self, prompt1: str, prompt2: str) -> None:
         """Different prompts must produce different cache keys."""
         assume(prompt1 != prompt2)
-        import tempfile, os
+        import os
+        import tempfile
+
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
             f.write(b"fake image data")
             img_path = f.name
-        
+
         try:
             k1 = GenerationCache.make_key(img_path, prompt1)
             k2 = GenerationCache.make_key(img_path, prompt2)

@@ -1,19 +1,18 @@
 """Tests for FitStream error hierarchy — structured, classifiable errors."""
 
-import pytest
 from fitstream.core.errors import (
+    ConfigError,
+    ExternalError,
     FitStreamError,
+    GPUError,
+    InternalError,
+    ModelError,
+    NotFoundError,
+    PipelineError,
+    RateLimitedError,
+    StorageError,
     UserError,
     ValidationError,
-    NotFoundError,
-    RateLimitedError,
-    ModelError,
-    GPUError,
-    StorageError,
-    ExternalError,
-    InternalError,
-    PipelineError,
-    ConfigError,
 )
 
 
@@ -22,9 +21,17 @@ class TestErrorHierarchy:
 
     def test_all_errors_inherit_from_fitstream_error(self) -> None:
         classes = [
-            UserError, ValidationError, NotFoundError, RateLimitedError,
-            ModelError, GPUError, StorageError, ExternalError,
-            InternalError, PipelineError, ConfigError,
+            UserError,
+            ValidationError,
+            NotFoundError,
+            RateLimitedError,
+            ModelError,
+            GPUError,
+            StorageError,
+            ExternalError,
+            InternalError,
+            PipelineError,
+            ConfigError,
         ]
         for cls in classes:
             assert issubclass(cls, FitStreamError), f"{cls.__name__} must inherit FitStreamError"
@@ -117,6 +124,7 @@ class TestFitStreamErrorFeatures:
 
     def test_serialization_roundtrip(self) -> None:
         import json
+
         err = GPUError("OOM", details={"gpu": "RTX 4090", "vram_gb": 24})
         d = err.to_dict()
         serialized = json.dumps(d)

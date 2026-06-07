@@ -1,10 +1,12 @@
 """Tests for generation cache."""
 
 import os
-import time
 import tempfile
+import time
+
 import pytest
-from fitstream.core.cache import GenerationCache, CacheEntry
+
+from fitstream.core.cache import CacheEntry, GenerationCache
 
 
 @pytest.fixture
@@ -100,8 +102,8 @@ class TestCacheOperations:
 class TestCacheStats:
     def test_stats(self, cache, dummy_video):
         cache.put("s1", video_path=dummy_video)
-        cache.get("s1")          # hit
-        cache.get("missing")     # miss
+        cache.get("s1")  # hit
+        cache.get("missing")  # miss
 
         stats = cache.get_stats()
         assert stats["entries"] == 1
@@ -124,18 +126,25 @@ class TestCachePersistence:
 
 class TestCacheEntry:
     def test_is_expired(self):
-        entry = CacheEntry(key="k", video_path="/v", created_at=time.time() - 100, 
-                           last_accessed=time.time(), ttl=10)
+        entry = CacheEntry(
+            key="k",
+            video_path="/v",
+            created_at=time.time() - 100,
+            last_accessed=time.time(),
+            ttl=10,
+        )
         assert entry.is_expired is True
 
     def test_not_expired(self):
-        entry = CacheEntry(key="k", video_path="/v", created_at=time.time(),
-                           last_accessed=time.time(), ttl=86400)
+        entry = CacheEntry(
+            key="k", video_path="/v", created_at=time.time(), last_accessed=time.time(), ttl=86400
+        )
         assert entry.is_expired is False
 
     def test_age_hours(self):
-        entry = CacheEntry(key="k", video_path="/v", created_at=time.time() - 7200,
-                           last_accessed=time.time())
+        entry = CacheEntry(
+            key="k", video_path="/v", created_at=time.time() - 7200, last_accessed=time.time()
+        )
         assert abs(entry.age_hours - 2.0) < 0.01
 
 

@@ -4,22 +4,22 @@ Lightweight endpoints at /m/ for mobile apps.
 Uses proper dependency injection — NO circular imports.
 """
 
+import base64
 import os
 import uuid
-import base64
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
-from loguru import logger
 
 from fitstream.api.dependencies import (
-    get_app_config, get_model_manager, get_job_queue,
-    require_rate_limit, save_upload, get_upload_dir,
+    get_job_queue,
+    get_model_manager,
+    get_upload_dir,
+    require_rate_limit,
+    save_upload,
 )
 from fitstream.core.job_queue import JobQueue
 from fitstream.core.models.model_manager import ModelManager
-from fitstream.config import FitStreamConfig
 
 mobile_router = APIRouter(tags=["Mobile"])
 
@@ -36,9 +36,9 @@ class MobileJobStatus(BaseModel):
     id: str
     status: str
     progress: float = 0
-    video_url: Optional[str] = None
+    video_url: str | None = None
     seconds: float = 0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @mobile_router.get("/status", dependencies=[Depends(require_rate_limit)])
@@ -50,7 +50,7 @@ async def mobile_status(
     gpu_info = models.get_gpu_status()
     all_jobs = jobs.list_jobs(limit=500)
     active = sum(1 for j in all_jobs if j.status == "processing")
-    
+
     return MobileStatus(
         ok=True,
         gpu=gpu_info.get("available", False),
@@ -66,8 +66,8 @@ async def mobile_generate(
     mode: str = Form("animate"),
     style: str = Form("cinematic"),
     quality: str = Form("draft"),
-    image: Optional[UploadFile] = File(None),
-    image_base64: Optional[str] = Form(None),
+    image: UploadFile | None = File(None),
+    image_base64: str | None = Form(None),
     jobs: JobQueue = Depends(get_job_queue),
 ):
     """📱 Simplified generation endpoint."""
@@ -77,13 +77,17 @@ async def mobile_generate(
         img_path = _save_base64(image_base64)
     else:
         raise HTTPException(400, "Image required")
-    
+
     if quality not in ("draft", "standard"):
         quality = "draft"
-    
-    job = jobs.create_job(mode, prompt=prompt, image_paths=[img_path],
-                          params={"style": style, "quality": quality, "mobile": True})
-    
+
+    job = jobs.create_job(
+        mode,
+        prompt=prompt,
+        image_paths=[img_path],
+        params={"style": style, "quality": quality, "mobile": True},
+    )
+
     return {"job_id": job.id, "status": "queued", "mode": mode}
 
 
@@ -96,9 +100,14 @@ async def mobile_job_status(
     job = jobs.get_job(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
-    
-    status_map = {"completed": "done", "failed": "failed", "queued": "queued", "processing": "processing"}
-    
+
+    status_map = {
+        "completed": "done",
+        "failed": "failed",
+        "queued": "queued",
+        "processing": "processing",
+    }
+
     return MobileJobStatus(
         id=job_id,
         status=status_map.get(job.status, job.status),
@@ -116,18 +125,19 @@ async def mobile_gallery(
     jobs: JobQueue = Depends(get_job_queue),
 ):
     """📱 Lightweight paginated gallery."""
-    completed = [
-        j for j in jobs.list_jobs(limit=500)
-        if j.status == "completed" and j.video_path
-    ]
-    
+    completed = [j for j in jobs.list_jobs(limit=500) if j.status == "completed" and j.video_path]
+
     total = len(completed)
-    page_items = completed[page * size:(page + 1) * size]
-    
+    page_items = completed[page * size : (page + 1) * size]
+
     return {
         "items": [
-            {"id": j.id, "type": j.type, "prompt": (j.prompt or "")[:60],
-             "video": f"/api/v1/jobs/{j.id}/video"}
+            {
+                "id": j.id,
+                "type": j.type,
+                "prompt": (j.prompt or "")[:60],
+                "video": f"/api/v1/jobs/{j.id}/video",
+            }
             for j in page_items
         ],
         "total": total,
@@ -140,14 +150,18 @@ async def mobile_gallery(
 async def mobile_styles() -> list:
     """📱 Flat style list."""
     from fitstream.core.pipelines.style_transfer import STYLE_PRESETS
+
     return [{"id": k, "name": v["label"]} for k, v in STYLE_PRESETS.items()]
 
 
 @mobile_router.get("/templates", dependencies=[Depends(require_rate_limit)])
-async def mobile_templates(category: Optional[str] = None) -> list:
+async def mobile_templates(category: str | None = None) -> list:
     from fitstream.core.prompt_templates import PromptTemplateLibrary
-    return [{"id": t["id"], "name": t["name"], "category": t["category"]}
-            for t in PromptTemplateLibrary().list_templates(category)]
+
+    return [
+        {"id": t["id"], "name": t["name"], "category": t["category"]}
+        for t in PromptTemplateLibrary().list_templates(category)
+    ]
 
 
 def _save_base64(b64: str) -> str:
@@ -156,7 +170,7 @@ def _save_base64(b64: str) -> str:
         if "," in b64:
             b64 = b64.split(",", 1)[1]
         data = base64.b64decode(b64)
-        ext = "png" if data[:4] == b'\x89PNG' else "jpg"
+        ext = "png" if data[:4] == b"\x89PNG" else "jpg"
         path = os.path.join(get_upload_dir(), f"m_{uuid.uuid4().hex[:8]}.{ext}")
         with open(path, "wb") as f:
             f.write(data)

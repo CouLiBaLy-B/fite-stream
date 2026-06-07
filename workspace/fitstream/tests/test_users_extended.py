@@ -1,6 +1,9 @@
 """Tests for the multi-user system."""
 
-import tempfile, os, pytest
+import tempfile
+
+import pytest
+
 from fitstream.core.users import UserManager
 
 
@@ -90,6 +93,7 @@ class TestSharing:
             users = UserManager(data_dir=d)
             user, _ = users.register("sharer4")
             import time
+
             share = users.create_share(user.id, "job", "/video.mp4")
             share.expires_at = time.time() - 1
             assert share.is_expired is True

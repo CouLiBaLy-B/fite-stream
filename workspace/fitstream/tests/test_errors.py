@@ -1,10 +1,20 @@
 """Tests for structured error hierarchy."""
 
 import pytest
+
 from fitstream.core.errors import (
-    FitStreamError, UserError, ValidationError, NotFoundError,
-    RateLimitedError, ModelError, GPUError, StorageError,
-    ExternalError, InternalError, PipelineError, ConfigError,
+    ConfigError,
+    ExternalError,
+    FitStreamError,
+    GPUError,
+    InternalError,
+    ModelError,
+    NotFoundError,
+    PipelineError,
+    RateLimitedError,
+    StorageError,
+    UserError,
+    ValidationError,
 )
 
 
@@ -14,19 +24,22 @@ class TestErrorHierarchy:
     def test_base_is_exception(self):
         assert issubclass(FitStreamError, Exception)
 
-    @pytest.mark.parametrize("cls,code,status,retryable", [
-        (UserError, "bad_request", 400, False),
-        (ValidationError, "validation_error", 422, False),
-        (NotFoundError, "not_found", 404, False),
-        (RateLimitedError, "rate_limited", 429, True),
-        (ModelError, "model_error", 500, True),
-        (GPUError, "gpu_error", 503, True),
-        (StorageError, "storage_error", 500, True),
-        (ExternalError, "external_error", 502, True),
-        (InternalError, "internal_error", 500, False),
-        (PipelineError, "pipeline_error", 500, True),
-        (ConfigError, "config_error", 500, False),
-    ])
+    @pytest.mark.parametrize(
+        "cls,code,status,retryable",
+        [
+            (UserError, "bad_request", 400, False),
+            (ValidationError, "validation_error", 422, False),
+            (NotFoundError, "not_found", 404, False),
+            (RateLimitedError, "rate_limited", 429, True),
+            (ModelError, "model_error", 500, True),
+            (GPUError, "gpu_error", 503, True),
+            (StorageError, "storage_error", 500, True),
+            (ExternalError, "external_error", 502, True),
+            (InternalError, "internal_error", 500, False),
+            (PipelineError, "pipeline_error", 500, True),
+            (ConfigError, "config_error", 500, False),
+        ],
+    )
     def test_error_attributes(self, cls, code, status, retryable):
         err = cls("test message")
         assert isinstance(err, FitStreamError)
@@ -95,6 +108,7 @@ class TestErrorHandlerIntegration:
     def test_fitstream_error_returns_json(self):
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
+
         from fitstream.api.app_factory import create_app
         from fitstream.core.errors import UserError
 
@@ -115,6 +129,7 @@ class TestErrorHandlerIntegration:
     def test_unhandled_error_returns_500(self):
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
+
         from fitstream.api.app_factory import create_app
 
         app = create_app()

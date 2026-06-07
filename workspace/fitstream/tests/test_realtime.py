@@ -1,7 +1,8 @@
 """Tests for real-time pipeline — no GPU needed."""
 
 import pytest
-from fitstream.core.pipelines.realtime import RealTimePipeline, RealTimeConfig, RealTimeResult
+
+from fitstream.core.pipelines.realtime import RealTimeConfig, RealTimePipeline, RealTimeResult
 
 
 class TestRealTimeConfig:
@@ -48,19 +49,31 @@ class TestRealTimePipeline:
 class TestRealTimeResult:
     def test_success(self):
         r = RealTimeResult(
-            video_path="/out.mp4", fps_achieved=3.2, num_frames=17,
-            duration_seconds=1.0, generation_time=5.3,
-            is_realtime=False, latency_ms=312, seed=42, success=True,
+            video_path="/out.mp4",
+            fps_achieved=3.2,
+            num_frames=17,
+            duration_seconds=1.0,
+            generation_time=5.3,
+            is_realtime=False,
+            latency_ms=312,
+            seed=42,
+            success=True,
         )
         assert r.success is True
         assert r.fps_achieved == 3.2
 
     def test_failure(self):
         r = RealTimeResult(
-            video_path="", fps_achieved=0, num_frames=0,
-            duration_seconds=0, generation_time=0,
-            is_realtime=False, latency_ms=0, seed=0,
-            success=False, error="OOM",
+            video_path="",
+            fps_achieved=0,
+            num_frames=0,
+            duration_seconds=0,
+            generation_time=0,
+            is_realtime=False,
+            latency_ms=0,
+            seed=0,
+            success=False,
+            error="OOM",
         )
         assert r.success is False
 

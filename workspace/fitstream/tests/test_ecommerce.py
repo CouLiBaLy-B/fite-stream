@@ -1,9 +1,10 @@
 """Tests for e-commerce connector."""
 
-import os
 import tempfile
+
 import pytest
-from fitstream.core.ecommerce import ECommerceConnector, ECommerceConfig, Product
+
+from fitstream.core.ecommerce import ECommerceConfig, ECommerceConnector, Product
 
 
 @pytest.fixture
@@ -31,14 +32,22 @@ class TestProductIngestion:
         assert len(product.images) == 1
 
     def test_ingest_dress(self, connector):
-        data = {"id": "d1", "title": "Red Evening Dress", "product_type": "dresses",
-                "images": [{"src": "img.jpg"}]}
+        data = {
+            "id": "d1",
+            "title": "Red Evening Dress",
+            "product_type": "dresses",
+            "images": [{"src": "img.jpg"}],
+        }
         p = connector.ingest_product(data)
         assert p.category == "dress"
 
     def test_ingest_shoes(self, connector):
-        data = {"id": "s1", "title": "White Sneakers", "product_type": "shoes",
-                "images": ["shoe.jpg"]}
+        data = {
+            "id": "s1",
+            "title": "White Sneakers",
+            "product_type": "shoes",
+            "images": ["shoe.jpg"],
+        }
         p = connector.ingest_product(data)
         assert p.category == "shoes"
 
@@ -52,10 +61,10 @@ class TestCatalog:
     def test_list_products(self, connector):
         connector.ingest_product({"id": "1", "title": "Shirt", "product_type": "tops"})
         connector.ingest_product({"id": "2", "title": "Pants", "product_type": "pants"})
-        
+
         all_prods = connector.list_products()
         assert len(all_prods) == 2
-        
+
         upper = connector.list_products(category="upper")
         assert len(upper) == 1
 
@@ -79,11 +88,13 @@ class TestWebhookVerification:
         config = ECommerceConfig(platform="shopify", webhook_secret="mysecret")
         with tempfile.TemporaryDirectory() as d:
             conn = ECommerceConnector(config, data_dir=d)
-            
-            import hmac, hashlib
+
+            import hashlib
+            import hmac
+
             body = b'{"test": true}'
             sig = hmac.new(b"mysecret", body, hashlib.sha256).hexdigest()
-            
+
             assert conn.verify_webhook_signature(body, sig) is True
             assert conn.verify_webhook_signature(body, "wrong") is False
 
@@ -93,9 +104,10 @@ class TestPersistence:
         with tempfile.TemporaryDirectory() as d:
             config = ECommerceConfig(platform="test")
             c1 = ECommerceConnector(config, data_dir=d)
-            c1.ingest_product({"id": "persist", "title": "Persistent Product",
-                              "images": ["img.jpg"]})
-            
+            c1.ingest_product(
+                {"id": "persist", "title": "Persistent Product", "images": ["img.jpg"]}
+            )
+
             c2 = ECommerceConnector(config, data_dir=d)
             assert c2.get_product("persist") is not None
             assert c2.get_product("persist").title == "Persistent Product"

@@ -1,7 +1,6 @@
 """Tests for the PluginRegistry and plugin system."""
 
-import pytest
-from fitstream.core.plugins import PluginRegistry, PluginInfo
+from fitstream.core.plugins import PluginInfo, PluginRegistry
 
 
 class TestPluginInfo:
@@ -14,8 +13,9 @@ class TestPluginInfo:
         assert info.description == ""
 
     def test_to_dict(self) -> None:
-        info = PluginInfo(name="mypipe", type="pipeline", description="My pipeline",
-                          version="2.0", author="Test")
+        info = PluginInfo(
+            name="mypipe", type="pipeline", description="My pipeline", version="2.0", author="Test"
+        )
         d = info.to_dict()
         assert d["name"] == "mypipe"
         assert d["type"] == "pipeline"
@@ -40,6 +40,7 @@ class TestPluginRegistryClassMethods:
         @PluginRegistry.pipeline("my_pipeline", description="Test pipeline")
         class MyPipeline:
             pass
+
         plugins = PluginRegistry.list_all()
         assert self._find(plugins["pipelines"], "my_pipeline") is not None
 
@@ -47,6 +48,7 @@ class TestPluginRegistryClassMethods:
         @PluginRegistry.exporter("my_exporter", description="Test exporter")
         class MyExporter:
             pass
+
         plugins = PluginRegistry.list_all()
         assert self._find(plugins["exporters"], "my_exporter") is not None
 
@@ -54,6 +56,7 @@ class TestPluginRegistryClassMethods:
         @PluginRegistry.model("my_model", description="Test model")
         class MyModel:
             pass
+
         plugins = PluginRegistry.list_all()
         assert self._find(plugins["models"], "my_model") is not None
 
@@ -61,9 +64,11 @@ class TestPluginRegistryClassMethods:
         @PluginRegistry.pipeline("p1")
         class P1:
             pass
+
         @PluginRegistry.pipeline("p2")
         class P2:
             pass
+
         assert PluginRegistry.count() >= 2
 
     def test_list_all_structure(self) -> None:
@@ -77,6 +82,7 @@ class TestPluginRegistryClassMethods:
         @PluginRegistry.pipeline("find_me", description="Found")
         class FindMe:
             pass
+
         info = PluginRegistry.get_pipeline("find_me")
         assert info is not None
         assert info.description == "Found"
@@ -88,6 +94,7 @@ class TestPluginRegistryClassMethods:
         @PluginRegistry.exporter("myexp", description="Export")
         class MyExp:
             pass
+
         info = PluginRegistry.get_exporter("myexp")
         assert info is not None
         assert info.type == "exporter"
@@ -97,9 +104,11 @@ class TestPluginRegistryClassMethods:
         @PluginRegistry.pipeline("dup")
         class First:
             pass
+
         @PluginRegistry.pipeline("dup", description="overwritten")
         class Second:
             pass
+
         info = PluginRegistry.get_pipeline("dup")
         assert info is not None
         assert info.description == "overwritten"
@@ -108,6 +117,7 @@ class TestPluginRegistryClassMethods:
         @PluginRegistry.pipeline("temp")
         class Temp:
             pass
+
         assert PluginRegistry.count() > 0
         PluginRegistry.clear()
         assert PluginRegistry.count() == 0

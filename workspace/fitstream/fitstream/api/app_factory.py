@@ -6,34 +6,35 @@ This replaces the monolithic server.py with a clean, testable factory pattern.
 
 Usage:
     from fitstream.api.app_factory import create_app
-    
+
     app = create_app()
-    
+
     # Or with custom config for testing:
     app = create_app(config=test_config)
 """
 
-from contextlib import asynccontextmanager
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from loguru import logger
 
 from fitstream import __version__
-from fitstream.api.middleware import RequestLoggingMiddleware, metrics
-from fitstream.api.tracing import TracingMiddleware
-from fitstream.api.websocket import ws_manager
-from fitstream.api.mobile import mobile_router
 from fitstream.api.error_handlers import register_error_handlers
+from fitstream.api.middleware import RequestLoggingMiddleware, metrics
+from fitstream.api.mobile import mobile_router
+from fitstream.api.routes.admin import router as admin_router
+from fitstream.api.routes.generation import router as generation_router
 
 # Import routers
 from fitstream.api.routes.health import router as health_router
-from fitstream.api.routes.generation import router as generation_router
 from fitstream.api.routes.jobs import router as jobs_router
-from fitstream.api.routes.admin import router as admin_router
+from fitstream.api.tracing import TracingMiddleware
+from fitstream.api.websocket import ws_manager
 
 
 def _get_cors_origins() -> list[str]:
@@ -86,23 +87,23 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(RequestLoggingMiddleware, metrics=metrics)
     app.add_middleware(TracingMiddleware)
-    
+
     # ── Error handlers ──
     register_error_handlers(app)
-    
+
     # ── Mount routers ──
     app.include_router(health_router)
     app.include_router(generation_router)
     app.include_router(jobs_router)
     app.include_router(admin_router)
     app.include_router(mobile_router, prefix="/m")
-    
+
     # ── Root ──
     @app.get("/", tags=["Health"])
     async def root() -> dict:
         """Root health-check endpoint returning API info."""
         return {"message": "FitStream API", "version": __version__, "docs": "/docs"}
-    
+
     # ── WebSocket ──
     @app.websocket("/ws/jobs/{job_id}")
     async def websocket_progress(websocket: WebSocket, job_id: str) -> None:
@@ -116,19 +117,20 @@ def create_app() -> FastAPI:
             ws_manager.disconnect(websocket, job_id)
         except Exception:
             ws_manager.disconnect(websocket, job_id)
-    
+
     # ── Static frontend pages ──
     _frontend_dir = Path(__file__).parent.parent.parent / "frontend"
-    
+
     _pages = {
         "/app": "index.html",
         "/create": "create.html",
         "/gallery": "gallery.html",
         "/monitor": "monitor.html",
     }
-    
+
     for route, filename in _pages.items():
         filepath = _frontend_dir / filename
+
         # Create closure properly
         def _make_handler(p: Path):
             async def handler():
@@ -136,8 +138,9 @@ def create_app() -> FastAPI:
                 if p.exists():
                     return FileResponse(p, media_type="text/html")
                 return HTMLResponse("<h1>Page not found</h1>", status_code=404)
+
             return handler
-        
+
         app.get(route, tags=["Frontend"])(_make_handler(filepath))
-    
+
     return app

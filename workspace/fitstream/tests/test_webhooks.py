@@ -1,7 +1,8 @@
 """Tests for webhook manager."""
 
 import pytest
-from fitstream.core.webhooks import WebhookManager, WebhookEndpoint
+
+from fitstream.core.webhooks import WebhookEndpoint, WebhookManager
 
 
 class TestWebhookManager:
@@ -14,8 +15,7 @@ class TestWebhookManager:
         assert len(eid) == 12
 
     def test_register_with_events(self):
-        eid = self.wm.register("https://example.com/hook",
-                                events=["completed"])
+        self.wm.register("https://example.com/hook", events=["completed"])
         endpoints = self.wm.list_endpoints()
         assert len(endpoints) == 1
         assert "completed" in endpoints[0]["events"]
@@ -23,8 +23,7 @@ class TestWebhookManager:
 
     def test_register_invalid_events(self):
         with pytest.raises(ValueError, match="Invalid events"):
-            self.wm.register("https://example.com/hook",
-                              events=["invalid_event"])
+            self.wm.register("https://example.com/hook", events=["invalid_event"])
 
     def test_unregister(self):
         eid = self.wm.register("https://example.com/hook")

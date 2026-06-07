@@ -1,6 +1,5 @@
 """Tests for the Python SDK client."""
 
-import pytest
 from fitstream.sdk import FitStreamClient
 
 

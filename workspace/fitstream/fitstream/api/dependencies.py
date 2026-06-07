@@ -19,20 +19,16 @@ Usage in routes:
 """
 
 import os
-import shutil
 import uuid
 from functools import lru_cache
-from typing import Optional
 
-from fastapi import Depends, HTTPException, Request, UploadFile
-from loguru import logger
+from fastapi import HTTPException, Request, UploadFile
 
+from fitstream.api.middleware import api_auth, rate_limiter
 from fitstream.config import FitStreamConfig, get_config
+from fitstream.core.interfaces import validate_image_dimensions, validate_image_upload
+from fitstream.core.job_queue import JobQueue
 from fitstream.core.models.model_manager import ModelManager
-from fitstream.core.job_queue import JobQueue, JobStatus
-from fitstream.core.interfaces import validate_image_upload, validate_image_dimensions
-from fitstream.api.middleware import rate_limiter, api_auth, metrics
-
 
 # ═══════════════════════════════════════════════════════════
 # Paths (constants)
@@ -53,6 +49,7 @@ def _ensure_dirs() -> None:
 # Singleton dependencies — cached via @lru_cache
 # No global mutable state — thread-safe and testable
 # ═══════════════════════════════════════════════════════════
+
 
 @lru_cache(maxsize=1)
 def get_app_config() -> FitStreamConfig:
@@ -83,6 +80,7 @@ def get_upload_dir() -> str:
 # Request-level dependencies (called per request)
 # ═══════════════════════════════════════════════════════════
 
+
 async def require_rate_limit(request: Request) -> None:
     client_ip = request.client.host if request.client else "unknown"
     if not rate_limiter.allow(client_ip):
@@ -100,7 +98,7 @@ async def require_generation_rate_limit(request: Request) -> None:
         raise HTTPException(429, "Generation rate limit exceeded. Max 5/minute.")
 
 
-async def optional_auth(request: Request) -> Optional[str]:
+async def optional_auth(request: Request) -> str | None:
     """
     Optional API key auth. Returns the API key or None.
     Does NOT block requests when auth is disabled.
@@ -115,6 +113,7 @@ async def optional_auth(request: Request) -> Optional[str]:
 # Helper: save uploaded file
 # ═══════════════════════════════════════════════════════════
 
+
 async def save_upload(
     file: UploadFile,
     prefix: str = "",
@@ -126,11 +125,11 @@ async def save_upload(
     Validates image type and size before saving.
     """
     upload_dir = get_upload_dir()
-    
+
     # Read content to check size
     content = await file.read()
     await file.seek(0)
-    
+
     # Validate
     if validate:
         errors = validate_image_upload(
@@ -141,11 +140,13 @@ async def save_upload(
         if errors:
             messages = "; ".join(e.message for e in errors)
             raise HTTPException(400, f"Invalid upload: {messages}")
-        
+
         # Also validate actual image dimensions
         try:
-            from PIL import Image
             from io import BytesIO
+
+            from PIL import Image
+
             img = Image.open(BytesIO(content))
             dim_errors = validate_image_dimensions(img.width, img.height, file.filename or "")
             if dim_errors:
@@ -155,14 +156,14 @@ async def save_upload(
             raise
         except Exception:
             pass  # If PIL fails, skip dimension validation (binary check already done)
-    
+
     # Save
     job_id = uuid.uuid4().hex[:8]
     safe_name = (file.filename or "upload").replace("/", "_").replace("\\", "_")
     filename = f"{prefix}{job_id}_{safe_name}"
     path = os.path.join(upload_dir, filename)
-    
+
     with open(path, "wb") as f:
         f.write(content)
-    
+
     return path

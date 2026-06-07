@@ -1,6 +1,5 @@
 """Tests for GenerationRequest and GenerationResult dataclasses."""
 
-import pytest
 from fitstream.core.interfaces import GenerationRequest, GenerationResult
 
 

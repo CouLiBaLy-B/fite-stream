@@ -2,6 +2,7 @@
 
 import pytest
 from click.testing import CliRunner
+
 from fitstream.cli import main
 
 
@@ -71,21 +72,34 @@ class TestCLIOptions:
     """Option parsing for key commands."""
 
     def test_animate_with_preset(self, runner, sample_image_path):
-        result = runner.invoke(main, [
-            "animate",
-            "--image", sample_image_path,
-            "--prompt", "Walking",
-            "--preset", "draft",
-            "--style", "ghibli",
-        ])
+        result = runner.invoke(
+            main,
+            [
+                "animate",
+                "--image",
+                sample_image_path,
+                "--prompt",
+                "Walking",
+                "--preset",
+                "draft",
+                "--style",
+                "ghibli",
+            ],
+        )
         # Will fail at GPU generation, but should parse options fine
         assert result.exit_code in (0, 1)
 
     def test_animate_with_seed(self, runner, sample_image_path):
-        result = runner.invoke(main, [
-            "animate",
-            "--image", sample_image_path,
-            "--prompt", "Walking",
-            "--seed", "42",
-        ])
+        result = runner.invoke(
+            main,
+            [
+                "animate",
+                "--image",
+                sample_image_path,
+                "--prompt",
+                "Walking",
+                "--seed",
+                "42",
+            ],
+        )
         assert result.exit_code in (0, 1)

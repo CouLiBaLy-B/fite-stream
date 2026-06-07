@@ -20,13 +20,14 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
     from loguru import logger
+
     from fitstream import __version__
     from fitstream.config import get_config
-    
+
     config = get_config()
-    
+
     logger.info(f"🎬 Starting FitStream API v{__version__}")
-    
+
     uvicorn.run(
         "fitstream.api.server:app",
         host=config.api.host,

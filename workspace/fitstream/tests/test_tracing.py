@@ -1,12 +1,10 @@
 """Tests for request tracing middleware."""
 
-import pytest
 from fitstream.api.tracing import (
-    TracingMiddleware,
-    get_trace_id,
-    generate_trace_id,
-    _trace_id,
     _request_start,
+    _trace_id,
+    generate_trace_id,
+    get_trace_id,
 )
 
 
@@ -46,6 +44,7 @@ class TestTracingContext:
 
     def test_request_start_context(self) -> None:
         import time
+
         token = _request_start.set(time.time())
         start = _request_start.get(0)
         assert start > 0

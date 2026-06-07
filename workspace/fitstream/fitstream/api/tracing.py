@@ -12,15 +12,13 @@ This enables end-to-end tracing across:
   API request → background job → pipeline → model → video output
 """
 
-import uuid
 import time
+import uuid
 from contextvars import ContextVar
-from typing import Optional
 
 from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
 from loguru import logger
-
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Context variable holding the current request's trace ID
 _trace_id: ContextVar[str] = ContextVar("trace_id", default="")
@@ -40,34 +38,34 @@ def generate_trace_id() -> str:
 class TracingMiddleware(BaseHTTPMiddleware):
     """
     Assigns a unique trace ID to every request.
-    
+
     - Sets X-Trace-Id response header
     - Propagates incoming X-Trace-Id if present (distributed tracing)
     - Adds trace_id to loguru context
     - Measures total request duration
     """
-    
+
     async def dispatch(self, request: Request, call_next):
         # Use incoming trace ID or generate new one
         trace_id = request.headers.get("X-Trace-Id", "") or generate_trace_id()
-        
+
         # Set context variables
         token_trace = _trace_id.set(trace_id)
         token_start = _request_start.set(time.time())
-        
+
         try:
             # Add trace context to loguru
             with logger.contextualize(trace_id=trace_id):
                 response = await call_next(request)
-            
+
             # Add trace headers to response
             response.headers["X-Trace-Id"] = trace_id
             response.headers["X-Request-Duration-Ms"] = str(
                 int((time.time() - _request_start.get(0)) * 1000)
             )
-            
+
             return response
-        
+
         finally:
             _trace_id.reset(token_trace)
             _request_start.reset(token_start)

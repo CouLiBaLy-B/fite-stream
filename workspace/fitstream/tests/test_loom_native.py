@@ -1,6 +1,7 @@
 """Tests for native LoomVideo pipeline — no GPU needed."""
 
 import pytest
+
 from fitstream.core.pipelines.loom_native import LoomNativePipeline
 
 
@@ -24,15 +25,14 @@ class TestMobileAPI:
     def test_mobile_styles(self):
         """Test that mobile styles endpoint returns flat list."""
         from fitstream.core.pipelines.style_transfer import STYLE_PRESETS
-        styles = [
-            {"id": k, "name": v["label"]}
-            for k, v in STYLE_PRESETS.items()
-        ]
+
+        styles = [{"id": k, "name": v["label"]} for k, v in STYLE_PRESETS.items()]
         assert len(styles) >= 10
         assert styles[0]["name"]  # has a name
 
     def test_mobile_templates(self):
         from fitstream.core.prompt_templates import PromptTemplateLibrary
+
         lib = PromptTemplateLibrary()
         templates = lib.list_templates()
         flat = [{"id": t["id"], "name": t["name"]} for t in templates]

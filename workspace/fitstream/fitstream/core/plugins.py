@@ -23,26 +23,28 @@ Usage:
     pipeline = registry.get_pipeline("my_pipeline")
 """
 
-import os
-import sys
 import importlib
-from pathlib import Path
-from typing import Optional, Dict, Any, List, Callable, Type
+import sys
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
 from loguru import logger
 
 
 @dataclass
 class PluginInfo:
     """Metadata about a registered plugin."""
+
     name: str
-    type: str          # "pipeline", "model", "preprocessor", "exporter"
+    type: str  # "pipeline", "model", "preprocessor", "exporter"
     description: str = ""
     version: str = "0.1.0"
     author: str = ""
-    cls: Optional[Type] = None
-    factory: Optional[Callable] = None
-    config: Dict[str, Any] = field(default_factory=dict)
+    cls: type | None = None
+    factory: Callable | None = None
+    config: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """To dict."""
@@ -65,77 +67,97 @@ class PluginRegistry:
     - Plugin listing and introspection
     """
 
-    _pipelines: Dict[str, PluginInfo] = {}
-    _models: Dict[str, PluginInfo] = {}
-    _preprocessors: Dict[str, PluginInfo] = {}
-    _exporters: Dict[str, PluginInfo] = {}
+    _pipelines: dict[str, PluginInfo] = {}
+    _models: dict[str, PluginInfo] = {}
+    _preprocessors: dict[str, PluginInfo] = {}
+    _exporters: dict[str, PluginInfo] = {}
 
     # ---------- Decorator-based registration ----------
 
     @classmethod
     def pipeline(cls, name: str, description: str = "", version: str = "0.1.0", author: str = ""):
         """Decorator to register a pipeline plugin."""
+
         def decorator(pipeline_cls):
             cls._pipelines[name] = PluginInfo(
-                name=name, type="pipeline", description=description,
-                version=version, author=author, cls=pipeline_cls,
+                name=name,
+                type="pipeline",
+                description=description,
+                version=version,
+                author=author,
+                cls=pipeline_cls,
             )
             logger.debug(f"Plugin registered: pipeline '{name}'")
             return pipeline_cls
+
         return decorator
 
     @classmethod
     def model(cls, name: str, description: str = "", version: str = "0.1.0", author: str = ""):
         """Decorator to register a model loader plugin."""
+
         def decorator(model_cls):
             cls._models[name] = PluginInfo(
-                name=name, type="model", description=description,
-                version=version, author=author, cls=model_cls,
+                name=name,
+                type="model",
+                description=description,
+                version=version,
+                author=author,
+                cls=model_cls,
             )
             logger.debug(f"Plugin registered: model '{name}'")
             return model_cls
+
         return decorator
 
     @classmethod
     def preprocessor(cls, name: str, description: str = ""):
         """Decorator to register a preprocessor plugin."""
+
         def decorator(func_or_cls):
             cls._preprocessors[name] = PluginInfo(
-                name=name, type="preprocessor", description=description,
+                name=name,
+                type="preprocessor",
+                description=description,
                 cls=func_or_cls if isinstance(func_or_cls, type) else None,
                 factory=func_or_cls if not isinstance(func_or_cls, type) else None,
             )
             return func_or_cls
+
         return decorator
 
     @classmethod
     def exporter(cls, name: str, description: str = ""):
         """Decorator to register an exporter plugin."""
+
         def decorator(func_or_cls):
             cls._exporters[name] = PluginInfo(
-                name=name, type="exporter", description=description,
+                name=name,
+                type="exporter",
+                description=description,
                 cls=func_or_cls if isinstance(func_or_cls, type) else None,
                 factory=func_or_cls if not isinstance(func_or_cls, type) else None,
             )
             return func_or_cls
+
         return decorator
 
     # ---------- Getters ----------
 
     @classmethod
-    def get_pipeline(cls, name: str) -> Optional[PluginInfo]:
+    def get_pipeline(cls, name: str) -> PluginInfo | None:
         return cls._pipelines.get(name)
 
     @classmethod
-    def get_model(cls, name: str) -> Optional[PluginInfo]:
+    def get_model(cls, name: str) -> PluginInfo | None:
         return cls._models.get(name)
 
     @classmethod
-    def get_preprocessor(cls, name: str) -> Optional[PluginInfo]:
+    def get_preprocessor(cls, name: str) -> PluginInfo | None:
         return cls._preprocessors.get(name)
 
     @classmethod
-    def get_exporter(cls, name: str) -> Optional[PluginInfo]:
+    def get_exporter(cls, name: str) -> PluginInfo | None:
         return cls._exporters.get(name)
 
     # ---------- Discovery ----------
@@ -172,7 +194,7 @@ class PluginRegistry:
     # ---------- Listing ----------
 
     @classmethod
-    def list_all(cls) -> Dict[str, List[dict]]:
+    def list_all(cls) -> dict[str, list[dict]]:
         """List all registered plugins by type."""
         return {
             "pipelines": [p.to_dict() for p in cls._pipelines.values()],
@@ -184,8 +206,9 @@ class PluginRegistry:
     @classmethod
     def count(cls) -> int:
         """Count."""
-        return (len(cls._pipelines) + len(cls._models) +
-                len(cls._preprocessors) + len(cls._exporters))
+        return (
+            len(cls._pipelines) + len(cls._models) + len(cls._preprocessors) + len(cls._exporters)
+        )
 
     @classmethod
     def clear(cls) -> None:

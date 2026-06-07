@@ -16,7 +16,7 @@ Architecture:
 
 Usage:
     trainer = LoRATrainer()
-    
+
     # Prepare training config
     config = trainer.create_config(
         name="my-person",
@@ -25,30 +25,31 @@ Usage:
         num_steps=1000,
         learning_rate=1e-4,
     )
-    
+
     # Start training
     result = trainer.train(config)
-    
+
     # Use the trained LoRA
     # pipeline.load_lora("loras/my-person/adapter.safetensors")
 """
 
-import os
 import json
+import os
 import time
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, List, Dict, Any
-from dataclasses import dataclass, field
+
 from loguru import logger
 
 
 @dataclass
 class LoRAConfig:
     """Configuration for a LoRA training run."""
+
     name: str
     trigger_word: str
-    training_images: List[str]
-    
+    training_images: list[str]
+
     # Training hyperparameters
     num_steps: int = 1000
     learning_rate: float = 1e-4
@@ -56,22 +57,22 @@ class LoRAConfig:
     lora_rank: int = 16
     lora_alpha: int = 16
     resolution: int = 512
-    
+
     # Captioning
     auto_caption: bool = True
     caption_prefix: str = ""
-    
+
     # Output
     output_dir: str = ""
     save_every_n_steps: int = 250
-    
+
     # Advanced
-    optimizer: str = "adamw"       # adamw, adam8bit, prodigy
-    scheduler: str = "cosine"      # cosine, constant, linear
+    optimizer: str = "adamw"  # adamw, adam8bit, prodigy
+    scheduler: str = "cosine"  # cosine, constant, linear
     gradient_checkpointing: bool = True
     mixed_precision: str = "bf16"  # bf16, fp16, no
     seed: int = 42
-    
+
     def to_dict(self) -> dict:
         """To dict."""
         return {
@@ -84,8 +85,8 @@ class LoRAConfig:
             "resolution": self.resolution,
             "output_dir": self.output_dir,
         }
-    
-    def validate(self) -> List[str]:
+
+    def validate(self) -> list[str]:
         """Validate the config. Returns list of errors (empty = valid)."""
         errors = []
         if not self.name:
@@ -104,13 +105,14 @@ class LoRAConfig:
         if self.num_steps > 10000:
             errors.append("Maximum 10000 training steps")
         if self.lora_rank not in [4, 8, 16, 32, 64, 128]:
-            errors.append(f"LoRA rank must be one of: 4, 8, 16, 32, 64, 128")
+            errors.append("LoRA rank must be one of: 4, 8, 16, 32, 64, 128")
         return errors
 
 
 @dataclass
 class LoRAInfo:
     """Metadata about a trained LoRA adapter."""
+
     name: str
     trigger_word: str
     adapter_path: str
@@ -120,7 +122,7 @@ class LoRAInfo:
     created_at: float
     training_time: float = 0.0
     size_mb: float = 0.0
-    
+
     def to_dict(self) -> dict:
         """To dict."""
         return {
@@ -138,29 +140,30 @@ class LoRAInfo:
 @dataclass
 class TrainResult:
     """Result of a LoRA training run."""
+
     success: bool
-    lora_info: Optional[LoRAInfo] = None
+    lora_info: LoRAInfo | None = None
     training_time: float = 0.0
-    error: Optional[str] = None
-    log_path: Optional[str] = None
+    error: str | None = None
+    log_path: str | None = None
 
 
 class LoRATrainer:
     """
     LoRA fine-tuning interface.
-    
+
     Manages training configs, runs, and adapter storage.
     """
-    
+
     def __init__(self, loras_dir: str = "./loras") -> None:
         self.loras_dir = Path(loras_dir)
         self.loras_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def create_config(
         self,
         name: str,
         trigger_word: str,
-        training_images: List[str],
+        training_images: list[str],
         num_steps: int = 1000,
         learning_rate: float = 1e-4,
         lora_rank: int = 16,
@@ -169,7 +172,7 @@ class LoRATrainer:
     ) -> LoRAConfig:
         """Create a training configuration."""
         output_dir = str(self.loras_dir / name)
-        
+
         config = LoRAConfig(
             name=name,
             trigger_word=trigger_word,
@@ -181,60 +184,66 @@ class LoRATrainer:
             output_dir=output_dir,
             **kwargs,
         )
-        
+
         errors = config.validate()
         if errors:
             raise ValueError(f"Invalid config: {'; '.join(errors)}")
-        
+
         # Save config
         os.makedirs(output_dir, exist_ok=True)
         with open(os.path.join(output_dir, "config.json"), "w") as f:
             json.dump(config.to_dict(), f, indent=2)
-        
-        logger.info(f"📝 LoRA config created: {name} ({len(training_images)} images, {num_steps} steps)")
+
+        logger.info(
+            f"📝 LoRA config created: {name} ({len(training_images)} images, {num_steps} steps)"
+        )
         return config
-    
+
     def train(self, config: LoRAConfig) -> TrainResult:
         """
         Start LoRA training.
-        
+
         This generates the training script and runs it.
         Requires: torch, diffusers, peft, accelerate
         """
         start_time = time.time()
-        
+
         logger.info(f"🏋️ Starting LoRA training: {config.name}")
         logger.info(f"   Images: {len(config.training_images)}")
         logger.info(f"   Steps: {config.num_steps}, LR: {config.learning_rate}")
         logger.info(f"   Rank: {config.lora_rank}, Resolution: {config.resolution}")
-        
+
         try:
             # Generate training script
             script = self._generate_training_script(config)
             script_path = os.path.join(config.output_dir, "train.py")
             with open(script_path, "w") as f:
                 f.write(script)
-            
+
             # Generate image-caption pairs
             captions_path = self._prepare_dataset(config)
-            
+
             # Save full config
             full_config_path = os.path.join(config.output_dir, "training_config.json")
             with open(full_config_path, "w") as f:
-                json.dump({
-                    **config.to_dict(),
-                    "training_images": config.training_images,
-                    "script_path": script_path,
-                    "captions_path": captions_path,
-                    "started_at": time.time(),
-                }, f, indent=2)
-            
+                json.dump(
+                    {
+                        **config.to_dict(),
+                        "training_images": config.training_images,
+                        "script_path": script_path,
+                        "captions_path": captions_path,
+                        "started_at": time.time(),
+                    },
+                    f,
+                    indent=2,
+                )
+
             # In a real deployment, this would run the training script
             # For now, we create the script and config — the user runs it
             training_time = time.time() - start_time
-            
+
             adapter_path = os.path.join(config.output_dir, "adapter_model.safetensors")
-            
+
             lora_info = LoRAInfo(
                 name=config.name,
                 trigger_word=config.trigger_word,
@@ -245,23 +254,23 @@ class LoRATrainer:
                 created_at=time.time(),
                 training_time=training_time,
             )
-            
+
             # Save LoRA info
             with open(os.path.join(config.output_dir, "lora_info.json"), "w") as f:
                 json.dump(lora_info.to_dict(), f, indent=2)
-            
+
             logger.success(
                 f"✅ Training config prepared: {config.output_dir}\n"
                 f"   Run: python {script_path}"
             )
-            
+
             return TrainResult(
                 success=True,
                 lora_info=lora_info,
                 training_time=training_time,
                 log_path=os.path.join(config.output_dir, "training.log"),
             )
-            
+
         except (OSError, ValueError) as e:
             logger.error(f"❌ Training failed: {e}")
             return TrainResult(
@@ -269,8 +278,8 @@ class LoRATrainer:
                 training_time=time.time() - start_time,
                 error=str(e),
             )
-    
-    def list_loras(self) -> List[dict]:
+
+    def list_loras(self) -> list[dict]:
         """List all available trained LoRA adapters."""
         loras = []
         for lora_dir in sorted(self.loras_dir.iterdir()):
@@ -287,46 +296,48 @@ class LoRATrainer:
                 except Exception:
                     pass
         return loras
-    
+
     def delete_lora(self, name: str) -> bool:
         lora_dir = self.loras_dir / name
         if lora_dir.exists():
             import shutil
+
             shutil.rmtree(lora_dir)
             logger.info(f"🗑️ Deleted LoRA: {name}")
             return True
         return False
-    
+
     def _prepare_dataset(self, config: LoRAConfig) -> str:
         dataset_dir = os.path.join(config.output_dir, "dataset")
         os.makedirs(dataset_dir, exist_ok=True)
-        
+
         import shutil
+
         captions = []
-        
+
         for i, img_path in enumerate(config.training_images):
             ext = os.path.splitext(img_path)[1]
             dst = os.path.join(dataset_dir, f"{i:04d}{ext}")
             shutil.copy2(img_path, dst)
-            
+
             # Auto-caption
             caption = f"{config.trigger_word}"
             if config.caption_prefix:
                 caption = f"{config.caption_prefix}, {caption}"
-            
+
             caption_path = os.path.join(dataset_dir, f"{i:04d}.txt")
             with open(caption_path, "w") as f:
                 f.write(caption)
-            
+
             captions.append({"image": dst, "caption": caption})
-        
+
         # Save metadata
         meta_path = os.path.join(dataset_dir, "metadata.json")
         with open(meta_path, "w") as f:
             json.dump(captions, f, indent=2)
-        
+
         return meta_path
-    
+
     def _generate_training_script(self, config: LoRAConfig) -> str:
         return f'''#!/usr/bin/env python3
 """

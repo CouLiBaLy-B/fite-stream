@@ -1,6 +1,7 @@
 """Health & status endpoints."""
 
 from fastapi import APIRouter, Depends
+
 from fitstream import __version__
 from fitstream.api.dependencies import get_model_manager
 from fitstream.api.schemas import GPUStatus, HealthResponse

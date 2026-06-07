@@ -1,7 +1,8 @@
 """Tests for plugin system."""
 
 import pytest
-from fitstream.core.plugins import PluginRegistry, PluginInfo
+
+from fitstream.core.plugins import PluginInfo, PluginRegistry
 
 
 class TestPluginRegistry:

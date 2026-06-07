@@ -9,14 +9,14 @@ Supported styles beyond prompt-based styling:
 
 Usage:
     pipeline = StyleTransferPipeline()
-    
+
     # Restyle an existing video
     result = pipeline.restyle_video(
         video_path="scene.mp4",
         style_reference="monet_painting.jpg",
         prompt="Same scene but in Monet impressionist style",
     )
-    
+
     # Generate with style reference
     result = pipeline.generate_with_style(
         person_image="person.jpg",
@@ -26,20 +26,18 @@ Usage:
 """
 
 import os
-import time
 import random
-from pathlib import Path
-from typing import Optional, Union, List
+import time
 from dataclasses import dataclass
+from pathlib import Path
+
 from loguru import logger
 
-from fitstream.config import FitStreamConfig, get_config
+from fitstream.config import FitStreamConfig
 from fitstream.core.models.model_manager import ModelManager
+from fitstream.core.pipelines.base import BasePipeline
 from fitstream.core.utils.image_utils import load_and_prepare_image
 from fitstream.core.utils.video_utils import save_video
-from fitstream.core.utils.prompt_utils import enhance_prompt
-from fitstream.core.pipelines.base import BasePipeline
-
 
 # Pre-defined style presets with associated prompt modifiers and negative prompts
 STYLE_PRESETS = {
@@ -109,6 +107,7 @@ STYLE_PRESETS = {
 @dataclass
 class StyleTransferResult:
     """Result of a style transfer operation."""
+
     video_path: str
     num_frames: int
     duration_seconds: float
@@ -118,7 +117,7 @@ class StyleTransferResult:
     style_name: str
     prompt_used: str
     success: bool
-    error: Optional[str] = None
+    error: str | None = None
 
 
 def get_style_prompt(
@@ -128,7 +127,7 @@ def get_style_prompt(
 ) -> str:
     """
     Build a styled prompt by combining a base prompt with style modifiers.
-    
+
     Args:
         base_prompt: The core scene/action description
         style: Style preset name or "custom"
@@ -136,12 +135,12 @@ def get_style_prompt(
     """
     if style == "custom" and custom_style_description:
         return f"{custom_style_description}, {base_prompt}"
-    
+
     preset = STYLE_PRESETS.get(style)
     if preset:
         parts = [preset["prefix"], base_prompt, preset["suffix"]]
         return " ".join(p for p in parts if p)
-    
+
     # Fallback: treat style as a direct modifier
     return f"{style} style, {base_prompt}"
 
@@ -149,52 +148,60 @@ def get_style_prompt(
 class StyleTransferPipeline(BasePipeline):
     """
     Style transfer pipeline for artistic video generation.
-    
+
     Supports:
     1. Preset styles (ghibli, pixar, comic, noir, cyberpunk, etc.)
     2. Custom style descriptions
     3. Reference image style transfer
     4. Video restyling (keep motion, change aesthetics)
     """
+
     pipeline_name: str = "style_transfer"
+
     def _execute(self, request):
         """Implement BasePipeline._execute — delegate to generate_with_style()."""
         result = self.generate_with_style(
-            person_image=request.image_paths[0] if request.image_paths else '',
+            person_image=request.image_paths[0] if request.image_paths else "",
             prompt=request.prompt,
             style=request.style,
-            custom_style=request.extra.get('custom_style', ''),
+            custom_style=request.extra.get("custom_style", ""),
             preset=request.preset,
             seed=request.seed,
         )
-        return __import__('fitstream.core.interfaces', fromlist=['GenerationResult']).GenerationResult(
-            success=result.success, video_path=result.video_path,
-            error=result.error, pipeline=self.pipeline_name,
-            generation_time=getattr(result, 'generation_time', 0),
+        return __import__(
+            "fitstream.core.interfaces", fromlist=["GenerationResult"]
+        ).GenerationResult(
+            success=result.success,
+            video_path=result.video_path,
+            error=result.error,
+            pipeline=self.pipeline_name,
+            generation_time=getattr(result, "generation_time", 0),
         )
 
-    def __init__(self, config: Optional[FitStreamConfig] = None, model_manager: Optional[ModelManager] = None) -> None:
+    def __init__(
+        self, config: FitStreamConfig | None = None, model_manager: ModelManager | None = None
+    ) -> None:
         super().__init__(config, model_manager)
-    
+
     @staticmethod
     def list_styles() -> dict:
         """Return all available style presets."""
         return {k: v["label"] for k, v in STYLE_PRESETS.items()}
-    
+
     def generate_with_style(
         self,
-        person_image: Union[str, Path],
+        person_image: str | Path,
         prompt: str,
         style: str = "ghibli",
         custom_style: str = "",
-        style_reference: Optional[Union[str, Path]] = None,
-        output_path: Optional[str] = None,
+        style_reference: str | Path | None = None,
+        output_path: str | None = None,
         preset: str = "standard",
         seed: int = -1,
     ) -> StyleTransferResult:
         """
         Generate a stylized animation from a person photo.
-        
+
         Args:
             person_image: Reference person photo
             prompt: Scene/action description
@@ -204,20 +211,20 @@ class StyleTransferPipeline(BasePipeline):
             preset: Quality preset
         """
         start_time = time.time()
-        
+
         if seed < 0:
             seed = random.randint(0, 2**32 - 1)
-        
+
         preset_config = self.config.get_preset(preset)
         width = preset_config.width
         height = preset_config.height
         num_frames = preset_config.num_frames
         fps = self.config.animate.fps
-        
+
         # Build styled prompt
         styled_prompt = get_style_prompt(prompt, style, custom_style)
         style_label = STYLE_PRESETS.get(style, {}).get("label", style)
-        
+
         if output_path is None:
             os.makedirs(self.config.output_dir, exist_ok=True)
             timestamp = int(time.time())
@@ -225,21 +232,22 @@ class StyleTransferPipeline(BasePipeline):
             output_path = os.path.join(
                 self.config.output_dir, f"style_{safe_style}_{timestamp}_{seed}.mp4"
             )
-        
-        logger.info(f"🎨 Style Transfer Generation:")
+
+        logger.info("🎨 Style Transfer Generation:")
         logger.info(f"   Style: {style_label}")
         logger.info(f"   Person: {person_image}")
         logger.info(f"   Prompt: {styled_prompt[:100]}...")
         if style_reference:
             logger.info(f"   Style ref: {style_reference}")
-        
+
         try:
             ref_image = load_and_prepare_image(person_image, width, height)
             pipe = self.model_manager.load_vace_diffusers()
-            
+
             import torch
+
             generator = torch.Generator(device="cpu").manual_seed(seed)
-            
+
             output = pipe(
                 image=ref_image,
                 prompt=styled_prompt,
@@ -250,15 +258,15 @@ class StyleTransferPipeline(BasePipeline):
                 guidance_scale=preset_config.guidance_scale,
                 generator=generator,
             )
-            
+
             frames = output.frames
             if isinstance(frames, list) and len(frames) > 0:
                 if isinstance(frames[0], list):
                     frames = frames[0]
-            
+
             save_video(frames, output_path, fps=fps)
             generation_time = time.time() - start_time
-            
+
             return StyleTransferResult(
                 video_path=output_path,
                 num_frames=num_frames,
@@ -273,75 +281,82 @@ class StyleTransferPipeline(BasePipeline):
         except (RuntimeError, OSError, ValueError) as e:
             logger.error(f"❌ Style transfer failed: {e}")
             return StyleTransferResult(
-                video_path="", num_frames=0, duration_seconds=0,
+                video_path="",
+                num_frames=0,
+                duration_seconds=0,
                 resolution=f"{width}x{height}",
                 generation_time=time.time() - start_time,
-                seed=seed, style_name=style_label,
-                prompt_used=styled_prompt, success=False, error=str(e),
+                seed=seed,
+                style_name=style_label,
+                prompt_used=styled_prompt,
+                success=False,
+                error=str(e),
             )
-    
+
     def restyle_video(
         self,
-        video_path: Union[str, Path],
+        video_path: str | Path,
         style: str = "ghibli",
         prompt: str = "Restyle this video",
         custom_style: str = "",
-        output_path: Optional[str] = None,
+        output_path: str | None = None,
         seed: int = -1,
     ) -> StyleTransferResult:
         """
         Restyle an existing video (V2V style transfer).
-        
+
         Keeps the motion/content but changes the visual aesthetics.
         Uses VACE's V2V capability with a style-focused prompt.
         """
         start_time = time.time()
-        
+
         if seed < 0:
             seed = random.randint(0, 2**32 - 1)
-        
+
         styled_prompt = get_style_prompt(prompt, style, custom_style)
         style_label = STYLE_PRESETS.get(style, {}).get("label", style)
-        
+
         if output_path is None:
             os.makedirs(self.config.output_dir, exist_ok=True)
             timestamp = int(time.time())
             output_path = os.path.join(self.config.output_dir, f"restyle_{timestamp}_{seed}.mp4")
-        
-        logger.info(f"🎨 Video Restyle:")
+
+        logger.info("🎨 Video Restyle:")
         logger.info(f"   Source: {video_path}")
         logger.info(f"   Style: {style_label}")
-        
+
         try:
             # Extract first frame as reference
             import cv2
             from PIL import Image
-            
+
             cap = cv2.VideoCapture(str(video_path))
             ret, frame = cap.read()
             fps = cap.get(cv2.CAP_PROP_FPS) or 16
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             cap.release()
-            
+
             if not ret:
                 raise ValueError("Could not read video")
-            
+
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             ref_image = Image.fromarray(frame_rgb)
-            
+
             preset_config = self.config.get_preset("standard")
             width, height = preset_config.width, preset_config.height
-            
+
             from fitstream.core.utils.image_utils import resize_to_target
+
             ref_image = resize_to_target(ref_image, width, height)
-            
+
             pipe = self.model_manager.load_vace_diffusers()
-            
+
             import torch
+
             generator = torch.Generator(device="cpu").manual_seed(seed)
-            
+
             num_frames = min(total_frames, preset_config.num_frames)
-            
+
             output = pipe(
                 image=ref_image,
                 prompt=styled_prompt,
@@ -349,18 +364,19 @@ class StyleTransferPipeline(BasePipeline):
                 width=width,
                 num_frames=num_frames,
                 num_inference_steps=preset_config.num_inference_steps,
-                guidance_scale=preset_config.guidance_scale + 1.0,  # Slightly higher for style adherence
+                guidance_scale=preset_config.guidance_scale
+                + 1.0,  # Slightly higher for style adherence
                 generator=generator,
             )
-            
+
             frames = output.frames
             if isinstance(frames, list) and len(frames) > 0:
                 if isinstance(frames[0], list):
                     frames = frames[0]
-            
+
             save_video(frames, output_path, fps=int(fps))
             generation_time = time.time() - start_time
-            
+
             return StyleTransferResult(
                 video_path=output_path,
                 num_frames=num_frames,
@@ -375,8 +391,14 @@ class StyleTransferPipeline(BasePipeline):
         except (RuntimeError, OSError, ValueError) as e:
             logger.error(f"❌ Video restyle failed: {e}")
             return StyleTransferResult(
-                video_path="", num_frames=0, duration_seconds=0,
-                resolution="", generation_time=time.time() - start_time,
-                seed=seed, style_name=style_label,
-                prompt_used=styled_prompt, success=False, error=str(e),
+                video_path="",
+                num_frames=0,
+                duration_seconds=0,
+                resolution="",
+                generation_time=time.time() - start_time,
+                seed=seed,
+                style_name=style_label,
+                prompt_used=styled_prompt,
+                success=False,
+                error=str(e),
             )

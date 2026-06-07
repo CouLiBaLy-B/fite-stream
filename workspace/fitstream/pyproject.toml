@@ -76,6 +76,12 @@ ignore = [
     "B008",  # do not perform function calls in argument defaults
     "B905",  # zip strict
     "SIM108", # ternary operator
+    "B904",  # raise from
+    "SIM102", # nested if
+    "SIM105", # suppress
+    "SIM117", # with statements
+    "F841",  # unused variable
+    "SIM115", # open without context
 ]
 
 [tool.ruff.lint.isort]

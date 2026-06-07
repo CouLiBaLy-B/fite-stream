@@ -2,8 +2,10 @@
 
 import os
 import tempfile
+
 import pytest
-from fitstream.core.lora_trainer import LoRATrainer, LoRAConfig
+
+from fitstream.core.lora_trainer import LoRAConfig, LoRATrainer
 
 
 @pytest.fixture
@@ -17,6 +19,7 @@ def sample_images():
     paths = []
     for i in range(5):
         from PIL import Image
+
         img = Image.new("RGB", (100, 100), (i * 50, 100, 200))
         p = tempfile.mktemp(suffix=".jpg")
         img.save(p)
@@ -58,15 +61,18 @@ class TestLoRAConfig:
 class TestLoRATrainer:
     def test_create_config(self, trainer, sample_images):
         config = trainer.create_config(
-            name="my-person", trigger_word="ohwx person",
-            training_images=sample_images, num_steps=500,
+            name="my-person",
+            trigger_word="ohwx person",
+            training_images=sample_images,
+            num_steps=500,
         )
         assert config.name == "my-person"
         assert os.path.exists(os.path.join(config.output_dir, "config.json"))
 
     def test_train_creates_script(self, trainer, sample_images):
         config = trainer.create_config(
-            name="train-test", trigger_word="ohwx",
+            name="train-test",
+            trigger_word="ohwx",
             training_images=sample_images,
         )
         result = trainer.train(config)

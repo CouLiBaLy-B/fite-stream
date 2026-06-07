@@ -1,12 +1,14 @@
 """Integration tests for the FitStream API — uses the app factory."""
 
 import io
+
 import pytest
 from PIL import Image
 
 pytest.importorskip("fastapi")
 
 from fastapi.testclient import TestClient
+
 from fitstream.api.app_factory import create_app
 
 
@@ -14,18 +16,20 @@ from fitstream.api.app_factory import create_app
 def client():
     """Create a fresh app + client for each test with generous rate limits."""
     import fitstream.api.dependencies as deps
+
     deps._config = None
     deps._model_manager = None
     deps._job_queue = None
-    
+
     # Increase rate limits for testing
     from fitstream.api.middleware import rate_limiter
+
     rate_limiter._requests.clear()
     rate_limiter._gen_requests.clear()
     rate_limiter.rpm = 1000
     rate_limiter.burst = 1000
     rate_limiter.gen_rpm = 100
-    
+
     app = create_app()
     with TestClient(app) as c:
         yield c
@@ -75,14 +79,17 @@ class TestAnimateEndpoint:
         assert r.status_code == 422
 
     def test_requires_prompt(self, client, sample_image_bytes):
-        r = client.post("/api/v1/animate",
-                        files={"image": ("test.jpg", sample_image_bytes, "image/jpeg")})
+        r = client.post(
+            "/api/v1/animate", files={"image": ("test.jpg", sample_image_bytes, "image/jpeg")}
+        )
         assert r.status_code == 422
 
     def test_accepts_valid_request(self, client, sample_image_bytes):
-        r = client.post("/api/v1/animate",
-                        files={"image": ("test.jpg", sample_image_bytes, "image/jpeg")},
-                        data={"prompt": "A person walking in a park"})
+        r = client.post(
+            "/api/v1/animate",
+            files={"image": ("test.jpg", sample_image_bytes, "image/jpeg")},
+            data={"prompt": "A person walking in a park"},
+        )
         assert r.status_code == 200
         assert "job_id" in r.json()
         assert r.json()["status"] == "queued"
@@ -90,42 +97,50 @@ class TestAnimateEndpoint:
 
 class TestTryOnEndpoint:
     def test_requires_both_images(self, client, sample_image_bytes):
-        r = client.post("/api/v1/tryon",
-                        files={"person_image": ("p.jpg", sample_image_bytes, "image/jpeg")},
-                        data={"prompt": "dress"})
+        r = client.post(
+            "/api/v1/tryon",
+            files={"person_image": ("p.jpg", sample_image_bytes, "image/jpeg")},
+            data={"prompt": "dress"},
+        )
         assert r.status_code == 422
 
     def test_accepts_valid_request(self, client, sample_image_bytes):
         g = io.BytesIO()
         Image.new("RGB", (400, 400), (200, 50, 50)).save(g, format="JPEG")
         g.seek(0)
-        r = client.post("/api/v1/tryon",
-                        files={
-                            "person_image": ("p.jpg", sample_image_bytes, "image/jpeg"),
-                            "garment_image": ("g.jpg", g, "image/jpeg"),
-                        },
-                        data={"prompt": "red dress", "category": "dress"})
+        r = client.post(
+            "/api/v1/tryon",
+            files={
+                "person_image": ("p.jpg", sample_image_bytes, "image/jpeg"),
+                "garment_image": ("g.jpg", g, "image/jpeg"),
+            },
+            data={"prompt": "red dress", "category": "dress"},
+        )
         assert r.status_code == 200
         assert "job_id" in r.json()
 
 
 class TestComposeEndpoint:
     def test_requires_min_2_images(self, client, sample_image_bytes):
-        r = client.post("/api/v1/compose",
-                        files=[("images", ("i1.jpg", sample_image_bytes, "image/jpeg"))],
-                        data={"prompt": "test @Image 1"})
+        r = client.post(
+            "/api/v1/compose",
+            files=[("images", ("i1.jpg", sample_image_bytes, "image/jpeg"))],
+            data={"prompt": "test @Image 1"},
+        )
         assert r.status_code == 400
 
     def test_accepts_valid_request(self, client):
         bufs = []
         for i in range(3):
             b = io.BytesIO()
-            Image.new("RGB", (200, 200), (i*80, 100, 150)).save(b, format="JPEG")
+            Image.new("RGB", (200, 200), (i * 80, 100, 150)).save(b, format="JPEG")
             b.seek(0)
             bufs.append(b)
-        r = client.post("/api/v1/compose",
-                        files=[("images", (f"i{i}.jpg", b, "image/jpeg")) for i, b in enumerate(bufs)],
-                        data={"prompt": "Person (@Image 1) wearing (@Image 2) in (@Image 3)"})
+        r = client.post(
+            "/api/v1/compose",
+            files=[("images", (f"i{i}.jpg", b, "image/jpeg")) for i, b in enumerate(bufs)],
+            data={"prompt": "Person (@Image 1) wearing (@Image 2) in (@Image 3)"},
+        )
         assert r.status_code == 200
         assert r.json()["num_reference_images"] == 3
 

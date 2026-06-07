@@ -1,6 +1,7 @@
 """Tests for A/B testing pipeline — no GPU needed."""
 
 import pytest
+
 from fitstream.core.ab_testing import ABTestingPipeline, ABTestResult, Variant
 
 
@@ -36,8 +37,12 @@ class TestABTestResult:
 
     def test_empty(self):
         result = ABTestResult(
-            test_id="t2", test_type="prompts",
-            variants=[], total_time=0, num_successful=0, output_dir="/out",
+            test_id="t2",
+            test_type="prompts",
+            variants=[],
+            total_time=0,
+            num_successful=0,
+            output_dir="/out",
         )
         assert result.to_dict()["num_total"] == 0
 

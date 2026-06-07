@@ -10,25 +10,23 @@ and UI messages are served in the user's language.
 
 Usage:
     from fitstream.core.i18n import I18n, translate_prompt
-    
+
     # Translate a French prompt for the AI model
     en_prompt = translate_prompt("Une femme marche dans Paris au coucher du soleil", "fr")
     # → "A woman walks in Paris at sunset"
-    
+
     # Get UI messages in French
     i18n = I18n("fr")
     print(i18n.t("status.processing"))  # → "En cours de génération..."
 """
 
-from typing import Optional, Dict
 from loguru import logger
-
 
 # ============================================================
 # UI Translations
 # ============================================================
 
-TRANSLATIONS: Dict[str, Dict[str, str]] = {
+TRANSLATIONS: dict[str, dict[str, str]] = {
     "en": {
         "app.title": "FitStream — AI Animation",
         "app.tagline": "Transform photos into animated stories",
@@ -158,7 +156,7 @@ SUPPORTED_LANGUAGES = list(TRANSLATIONS.keys())
 
 # Common phrase translations for prompt construction
 # (lightweight, no external API needed)
-PROMPT_PHRASES: Dict[str, Dict[str, str]] = {
+PROMPT_PHRASES: dict[str, dict[str, str]] = {
     "fr": {
         "une femme": "a woman",
         "un homme": "a man",
@@ -228,37 +226,37 @@ PROMPT_PHRASES: Dict[str, Dict[str, str]] = {
 def translate_prompt(prompt: str, source_lang: str) -> str:
     """
     Translate a prompt from source language to English.
-    
+
     Uses a lightweight phrase-replacement approach. For production,
     integrate with a proper translation API (DeepL, Google Translate, etc.)
-    
+
     Args:
         prompt: Original prompt in source language
         source_lang: ISO 639-1 code ("fr", "zh", "es", etc.)
-    
+
     Returns:
         English translation (best-effort)
     """
     if source_lang == "en":
         return prompt
-    
+
     phrases = PROMPT_PHRASES.get(source_lang, {})
     if not phrases:
         logger.warning(f"No translation phrases for language '{source_lang}', using original")
         return prompt
-    
+
     result = prompt.lower()
-    
+
     # Sort by length (longest first) to avoid partial replacements
     sorted_phrases = sorted(phrases.items(), key=lambda x: len(x[0]), reverse=True)
     for src, dst in sorted_phrases:
         result = result.replace(src.lower(), dst)
-    
+
     # Capitalize first letter
     result = result.strip()
     if result:
         result = result[0].upper() + result[1:]
-    
+
     logger.debug(f"Translated [{source_lang}→en]: '{prompt[:50]}...' → '{result[:50]}...'")
     return result
 
@@ -266,28 +264,28 @@ def translate_prompt(prompt: str, source_lang: str) -> str:
 class I18n:
     """
     Internationalization helper for UI messages.
-    
+
     Usage:
         i18n = I18n("fr")
         print(i18n.t("status.processing"))  # "En cours de génération..."
         print(i18n.t("nonexistent.key"))    # "nonexistent.key" (fallback)
     """
-    
+
     def __init__(self, lang: str = "en") -> None:
         self.lang = lang if lang in SUPPORTED_LANGUAGES else "en"
         self._messages = TRANSLATIONS.get(self.lang, {})
         self._fallback = TRANSLATIONS.get("en", {})
-    
+
     def t(self, key: str) -> str:
         return self._messages.get(key, self._fallback.get(key, key))
-    
-    def get_all(self) -> Dict[str, str]:
+
+    def get_all(self) -> dict[str, str]:
         """Translate a UI message key."""
         """Get all messages for the current language (with English fallback)."""
         merged = dict(self._fallback)
         merged.update(self._messages)
         return merged
-    
+
     @staticmethod
     def supported_languages() -> list:
         """List all supported language codes."""

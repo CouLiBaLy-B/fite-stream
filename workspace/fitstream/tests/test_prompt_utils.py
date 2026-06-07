@@ -1,11 +1,12 @@
 """Tests for prompt utilities — can run without GPU."""
 
 import pytest
+
 from fitstream.core.utils.prompt_utils import (
+    Scene,
+    create_story_summary,
     enhance_prompt,
     split_story_to_scenes,
-    create_story_summary,
-    Scene,
 )
 
 
@@ -15,16 +16,16 @@ class TestEnhancePrompt:
         assert "Cinematic" in result
         assert "woman walks" in result
         assert "high quality" in result
-    
+
     def test_empty_prompt(self):
         result = enhance_prompt("", style="cinematic")
         assert result == ""
-    
+
     def test_no_duplicate_quality(self):
         """Should not add quality tags if already present."""
         result = enhance_prompt("A beautiful 4k scene", style="cinematic")
         assert result.count("4k") == 1
-    
+
     def test_different_styles(self):
         for style in ["cinematic", "photorealistic", "anime", "dreamy"]:
             result = enhance_prompt("A person smiling", style=style)
@@ -35,18 +36,18 @@ class TestSplitStory:
     def test_simple_story(self):
         story = "Marie walks in Paris. She enters a bakery. She buys a croissant."
         scenes = split_story_to_scenes(story, max_scenes=5)
-        
+
         assert len(scenes) == 3
         assert all(isinstance(s, Scene) for s in scenes)
         assert scenes[0].index == 0
         assert scenes[1].index == 1
-    
+
     def test_max_scenes_limit(self):
         story = ". ".join([f"Scene {i} happens" for i in range(20)])
         scenes = split_story_to_scenes(story, max_scenes=5)
-        
+
         assert len(scenes) <= 5
-    
+
     def test_structured_format(self):
         story = """
 ---
@@ -62,25 +63,25 @@ DURATION: short
 ---
 """
         scenes = split_story_to_scenes(story, max_scenes=5)
-        
+
         assert len(scenes) == 2
         assert scenes[0].duration_hint == "long"
         assert scenes[1].duration_hint == "short"
-    
+
     def test_mood_inference(self):
         scenes = split_story_to_scenes(
             "She smiles happily. Dark clouds gather ominously.",
             auto_enhance=False,
         )
-        
+
         assert scenes[0].mood == "happy"
-    
+
     def test_camera_inference(self):
         scenes = split_story_to_scenes(
             "She walks down a long street. Close view of her eyes.",
             auto_enhance=False,
         )
-        
+
         assert scenes[0].camera == "wide shot"
         assert scenes[1].camera == "close-up"
 
@@ -92,7 +93,7 @@ class TestCreateStorySummary:
             Scene(1, "Scene two", "long", "wide shot", "dramatic"),
         ]
         summary = create_story_summary(scenes)
-        
+
         assert "2 scenes" in summary
         assert "Scene 1" in summary
         assert "Scene 2" in summary

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import gc
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -41,9 +41,9 @@ class ModelManager:
         status = models.get_gpu_status()
     """
 
-    def __init__(self, config: Optional[FitStreamConfig] = None) -> None:
+    def __init__(self, config: FitStreamConfig | None = None) -> None:
         self.config = config or get_config()
-        self._loaded_model: Optional[Any] = None
+        self._loaded_model: Any | None = None
         self._loaded_model_key: str = ""
 
     # ── Model Loading ──────────────────────────────────────
@@ -172,7 +172,7 @@ class ModelManager:
 
     # ── GPU Status ─────────────────────────────────────────
 
-    def get_gpu_status(self) -> Dict[str, Any]:
+    def get_gpu_status(self) -> dict[str, Any]:
         """
         Get GPU and model status.
 
@@ -186,7 +186,7 @@ class ModelManager:
               - utilization_pct: float
               - loaded_model: str or None
         """
-        status: Dict[str, Any] = {
+        status: dict[str, Any] = {
             "available": False,
             "gpu_name": None,
             "total_gb": 0.0,
@@ -225,6 +225,7 @@ class ModelManager:
         gc.collect()
         try:
             import torch
+
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()
@@ -242,8 +243,9 @@ class _MockPipeline:
 
     def __call__(self, **kwargs) -> Any:
         """Mock generation call."""
-        import numpy as np
         from dataclasses import dataclass
+
+        import numpy as np
 
         @dataclass
         class MockOutput:
@@ -255,17 +257,13 @@ class _MockPipeline:
 
         # Generate dummy frames (random noise)
         frames = [
-            (np.random.rand(height, width, 3) * 255).astype(np.uint8)
-            for _ in range(num_frames)
+            (np.random.rand(height, width, 3) * 255).astype(np.uint8) for _ in range(num_frames)
         ]
 
-        logger.info(
-            f"[MockPipeline] Generated {num_frames} frames "
-            f"({width}x{height})"
-        )
+        logger.info(f"[MockPipeline] Generated {num_frames} frames " f"({width}x{height})")
         return MockOutput(frames=frames)
 
-    def to(self, device: str) -> "_MockPipeline":
+    def to(self, device: str) -> _MockPipeline:
         return self
 
     def enable_model_cpu_offload(self) -> None:
@@ -275,7 +273,7 @@ class _MockPipeline:
         pass
 
     @property
-    def vae(self) -> "_MockVAE":
+    def vae(self) -> _MockVAE:
         return _MockVAE()
 
 

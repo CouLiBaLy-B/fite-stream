@@ -1,6 +1,9 @@
 """Tests for the GalleryManager and GalleryItem."""
-import tempfile, os, pytest
-from fitstream.core.gallery import GalleryManager, GalleryItem
+
+import tempfile
+
+from fitstream.core.gallery import GalleryItem, GalleryManager
+
 
 class TestGalleryItem:
     def test_creation(self):
@@ -16,17 +19,21 @@ class TestGalleryItem:
         assert d["tags"] == ["tag1"]
 
     def test_matches_search(self):
-        e = GalleryItem(id="s", video_path="/v.mp4", prompt="walking in paris", type="animate", tags=["fashion"])
+        e = GalleryItem(
+            id="s", video_path="/v.mp4", prompt="walking in paris", type="animate", tags=["fashion"]
+        )
         assert e.matches_search("paris") is True
         assert e.matches_search("fashion") is True
         assert e.matches_search("tokyo") is False
+
 
 class TestGalleryManager:
     def test_add_and_get(self):
         with tempfile.TemporaryDirectory() as d:
             g = GalleryManager(gallery_dir=d)
             g.add_from_job("job1", "/v.mp4", type="animate", prompt="test prompt")
-            result = g.list_items(); items = result["items"] if isinstance(result, dict) else result
+            result = g.list_items()
+            items = result["items"] if isinstance(result, dict) else result
             assert len(items) == 1
             assert items[0]["id"] == "job1"
 
@@ -86,4 +93,5 @@ class TestGalleryManager:
             g = GalleryManager(gallery_dir=d)
             g.add_from_job("a", "/v.mp4", type="animate", prompt="p1")
             g.add_from_job("b", "/v.mp4", type="story", prompt="p2")
-            stats = g.get_stats(); assert stats.get("total_items", 0) == 2
+            stats = g.get_stats()
+            assert stats.get("total_items", 0) == 2

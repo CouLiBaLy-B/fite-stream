@@ -1,6 +1,5 @@
 """Tests for ModelManager — the critical component that was missing."""
 
-import pytest
 from fitstream.config import FitStreamConfig
 from fitstream.core.models.model_manager import ModelManager, _MockPipeline, _MockVAE
 

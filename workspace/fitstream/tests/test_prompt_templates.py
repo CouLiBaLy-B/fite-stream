@@ -1,21 +1,24 @@
 """Tests for prompt template library."""
 
 import pytest
-from fitstream.core.prompt_templates import PromptTemplateLibrary, PromptTemplate, TEMPLATES
+
+from fitstream.core.prompt_templates import TEMPLATES, PromptTemplate, PromptTemplateLibrary
 
 
 class TestPromptTemplate:
     def test_fill_basic(self):
-        t = PromptTemplate(id="test", category="test", name="Test",
-                           template="{person} walks in {location}")
+        t = PromptTemplate(
+            id="test", category="test", name="Test", template="{person} walks in {location}"
+        )
         result = t.fill(person="Marie", location="Paris")
         assert "Marie" in result
         assert "Paris" in result
 
     def test_fill_partial(self):
         """Unfilled variables get replaced with defaults."""
-        t = PromptTemplate(id="test", category="test", name="Test",
-                           template="{person} walks in {location}")
+        t = PromptTemplate(
+            id="test", category="test", name="Test", template="{person} walks in {location}"
+        )
         result = t.fill(person="Marie")
         assert "Marie" in result
         assert "the person" not in result  # person was filled
@@ -23,8 +26,12 @@ class TestPromptTemplate:
         assert "beautiful setting" in result
 
     def test_auto_detect_variables(self):
-        t = PromptTemplate(id="test", category="test", name="Test",
-                           template="{person} wears {garment} in {location}")
+        t = PromptTemplate(
+            id="test",
+            category="test",
+            name="Test",
+            template="{person} wears {garment} in {location}",
+        )
         assert "person" in t.variables
         assert "garment" in t.variables
         assert "location" in t.variables
@@ -82,10 +89,12 @@ class TestPromptTemplateLibrary:
     def test_all_templates_fillable(self):
         """Every template should produce a non-empty string when filled."""
         for template_id in [t.id for t in TEMPLATES]:
-            result = self.lib.get(template_id,
-                                  person="a young woman",
-                                  garment="a blue dress",
-                                  location="a sunny garden")
+            result = self.lib.get(
+                template_id,
+                person="a young woman",
+                garment="a blue dress",
+                location="a sunny garden",
+            )
             assert result is not None
             assert len(result) > 10, f"Template {template_id} produced too-short result"
 

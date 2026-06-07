@@ -1,11 +1,10 @@
 """Tests for JobQueue — persistent, thread-safe job management."""
 
 import os
-import json
-import time
 import tempfile
-import pytest
-from fitstream.core.job_queue import JobQueue, Job, JobStatus
+import time
+
+from fitstream.core.job_queue import Job, JobQueue, JobStatus
 
 
 class TestJobDataclass:
@@ -160,6 +159,7 @@ class TestJobQueuePersistence:
 
     def teardown_method(self) -> None:
         import shutil
+
         if os.path.exists(self.tmpdir):
             shutil.rmtree(self.tmpdir, ignore_errors=True)
 

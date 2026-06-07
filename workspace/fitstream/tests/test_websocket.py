@@ -1,8 +1,8 @@
 """Tests for WebSocket ConnectionManager."""
 
 import asyncio
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
 from fitstream.api.websocket import ConnectionManager, ws_manager
 
 

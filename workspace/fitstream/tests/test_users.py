@@ -1,10 +1,11 @@
 """Tests for multi-user system."""
 
-import os
-import time
 import tempfile
+import time
+
 import pytest
-from fitstream.core.users import UserManager, User, SharedVideo
+
+from fitstream.core.users import UserManager
 
 
 @pytest.fixture

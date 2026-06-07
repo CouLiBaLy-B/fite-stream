@@ -1,10 +1,11 @@
 """Tests for the LoomVideo pipeline utilities — no GPU needed."""
 
 import pytest
+
 from fitstream.core.pipelines.loom import (
-    validate_image_references,
-    build_multi_image_prompt,
     LoomPipeline,
+    build_multi_image_prompt,
+    validate_image_references,
 )
 
 
@@ -15,21 +16,21 @@ class TestValidateReferences:
             num_images=2,
         )
         assert len(warnings) == 0
-    
+
     def test_missing_reference_in_prompt(self):
         warnings = validate_image_references(
             "A beautiful scene with nature",
             num_images=2,
         )
         assert any("No @Image references" in w for w in warnings)
-    
+
     def test_out_of_range_reference(self):
         warnings = validate_image_references(
             "The person (@Image 1) in the garden (@Image 5)",
             num_images=2,
         )
         assert any("@Image 5" in w for w in warnings)
-    
+
     def test_unreferenced_image(self):
         warnings = validate_image_references(
             "The person (@Image 1) walking",
@@ -38,7 +39,7 @@ class TestValidateReferences:
         # Image 2 and 3 are not referenced
         assert any("Image 2" in w for w in warnings)
         assert any("Image 3" in w for w in warnings)
-    
+
     def test_case_insensitive(self):
         warnings = validate_image_references(
             "The person (@image 1) with (@IMAGE 2)",
@@ -56,7 +57,7 @@ class TestBuildMultiImagePrompt:
         assert "@Image 1" in result
         assert "@Image 2" in result
         assert "walks down the street" in result
-    
+
     def test_ordering(self):
         result = build_multi_image_prompt(
             {3: "garden", 1: "woman", 2: "dress"},

@@ -2,9 +2,10 @@
 
 import os
 import tempfile
+
 import yaml
-import pytest
-from fitstream.config import FitStreamConfig, AnimateConfig, get_config
+
+from fitstream.config import FitStreamConfig, get_config
 
 
 class TestConfigPresets:
@@ -47,9 +48,13 @@ class TestConfigYAML:
 
     def test_load_from_yaml_animation_params(self) -> None:
         """Verify YAML overrides animation params correctly."""
-        import tempfile, yaml, os
+        import os
+        import tempfile
 
-        yaml_content = {"generation": {"animate": {"width": 1024, "num_frames": 97}}, "output": {"directory": "/custom/output"}}
+        yaml_content = {
+            "generation": {"animate": {"width": 1024, "num_frames": 97}},
+            "output": {"directory": "/custom/output"},
+        }
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(yaml_content, f)
@@ -69,9 +74,7 @@ class TestConfigYAML:
         assert config.animate.width == 832
 
     def test_from_yaml_empty_file(self) -> None:
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write("")  # Empty
             tmp_path = f.name
         try:
@@ -136,7 +139,7 @@ class TestGetConfig:
         assert c1 is c2
 
     def test_get_config_reload(self) -> None:
-        c1 = get_config()
+        get_config()
         c2 = get_config(reload=True)
         # Still a FitStreamConfig, may or may not be same instance
         assert isinstance(c2, FitStreamConfig)

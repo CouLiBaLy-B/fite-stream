@@ -23,7 +23,7 @@ Usage:
         raise UserError(f"Invalid parameter: {e}")
 """
 
-from typing import Optional, Dict, Any
+from typing import Any
 
 
 class FitStreamError(Exception):
@@ -37,15 +37,15 @@ class FitStreamError(Exception):
         self,
         message: str,
         *,
-        details: Optional[Dict[str, Any]] = None,
-        cause: Optional[Exception] = None,
+        details: dict[str, Any] | None = None,
+        cause: Exception | None = None,
     ) -> None:
         super().__init__(message)
         self.message = message
         self.details = details or {}
         self.cause = cause
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """To dict."""
         d = {
             "error": self.error_code,
@@ -60,8 +60,10 @@ class FitStreamError(Exception):
 
 # ── User errors (client-side, not retryable) ──
 
+
 class UserError(FitStreamError):
     """Bad input from the user."""
+
     status_code = 400
     error_code = "bad_request"
     retryable = False
@@ -69,6 +71,7 @@ class UserError(FitStreamError):
 
 class ValidationError(FitStreamError):
     """Input validation failure."""
+
     status_code = 422
     error_code = "validation_error"
     retryable = False
@@ -76,6 +79,7 @@ class ValidationError(FitStreamError):
 
 class NotFoundError(FitStreamError):
     """Resource not found."""
+
     status_code = 404
     error_code = "not_found"
     retryable = False
@@ -83,6 +87,7 @@ class NotFoundError(FitStreamError):
 
 class RateLimitedError(FitStreamError):
     """Too many requests."""
+
     status_code = 429
     error_code = "rate_limited"
     retryable = True
@@ -90,8 +95,10 @@ class RateLimitedError(FitStreamError):
 
 # ── Server errors (retryable) ──
 
+
 class ModelError(FitStreamError):
     """AI model loading or inference failure."""
+
     status_code = 500
     error_code = "model_error"
     retryable = True
@@ -99,6 +106,7 @@ class ModelError(FitStreamError):
 
 class GPUError(FitStreamError):
     """GPU out of memory or unavailable."""
+
     status_code = 503
     error_code = "gpu_error"
     retryable = True
@@ -106,6 +114,7 @@ class GPUError(FitStreamError):
 
 class StorageError(FitStreamError):
     """File system or storage failure."""
+
     status_code = 500
     error_code = "storage_error"
     retryable = True
@@ -113,6 +122,7 @@ class StorageError(FitStreamError):
 
 class ExternalError(FitStreamError):
     """Third-party service failure (webhooks, external APIs)."""
+
     status_code = 502
     error_code = "external_error"
     retryable = True
@@ -120,8 +130,10 @@ class ExternalError(FitStreamError):
 
 # ── Server errors (not retryable — bugs) ──
 
+
 class InternalError(FitStreamError):
     """Unexpected internal error (bug)."""
+
     status_code = 500
     error_code = "internal_error"
     retryable = False
@@ -129,6 +141,7 @@ class InternalError(FitStreamError):
 
 class PipelineError(FitStreamError):
     """Error within a generation pipeline."""
+
     status_code = 500
     error_code = "pipeline_error"
     retryable = True
@@ -146,6 +159,7 @@ class PipelineError(FitStreamError):
 
 class ConfigError(FitStreamError):
     """Invalid configuration."""
+
     status_code = 500
     error_code = "config_error"
     retryable = False

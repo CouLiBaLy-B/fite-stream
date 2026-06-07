@@ -2,9 +2,9 @@
 FitStream API — Pydantic Schemas
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from enum import Enum
+
+from pydantic import BaseModel, Field
 
 
 class StyleEnum(str, Enum):
@@ -30,17 +30,19 @@ class TransitionEnum(str, Enum):
 
 class AnimateRequest(BaseModel):
     """Request for single-scene animation."""
+
     prompt: str = Field(..., description="Text prompt for the animation", min_length=5)
     style: StyleEnum = StyleEnum.cinematic
     preset: PresetEnum = PresetEnum.standard
     seed: int = Field(-1, description="Random seed (-1 for random)")
-    num_frames: Optional[int] = Field(None, ge=16, le=128)
-    num_inference_steps: Optional[int] = Field(None, ge=5, le=100)
-    guidance_scale: Optional[float] = Field(None, ge=1.0, le=20.0)
+    num_frames: int | None = Field(None, ge=16, le=128)
+    num_inference_steps: int | None = Field(None, ge=5, le=100)
+    guidance_scale: float | None = Field(None, ge=1.0, le=20.0)
 
 
 class StoryRequest(BaseModel):
     """Request for multi-scene story generation."""
+
     story: str = Field(..., description="Story text to animate", min_length=10)
     style: StyleEnum = StyleEnum.cinematic
     preset: PresetEnum = PresetEnum.standard
@@ -50,13 +52,14 @@ class StoryRequest(BaseModel):
 
 class GenerationResponse(BaseModel):
     """Response for generation requests."""
+
     job_id: str
     status: str  # "queued", "processing", "completed", "failed"
-    video_url: Optional[str] = None
+    video_url: str | None = None
     progress: float = 0.0  # 0.0 to 1.0
-    generation_time: Optional[float] = None
-    error: Optional[str] = None
-    
+    generation_time: float | None = None
+    error: str | None = None
+
     # Metadata
     num_frames: int = 0
     duration_seconds: float = 0.0
@@ -67,36 +70,39 @@ class GenerationResponse(BaseModel):
 
 class StoryResponse(BaseModel):
     """Response for story generation."""
+
     job_id: str
     status: str
-    video_url: Optional[str] = None
+    video_url: str | None = None
     scenes_completed: int = 0
     scenes_total: int = 0
     progress: float = 0.0
     total_duration: float = 0.0
-    generation_time: Optional[float] = None
-    error: Optional[str] = None
+    generation_time: float | None = None
+    error: str | None = None
 
 
 class GPUStatus(BaseModel):
     """GPU status information."""
+
     available: bool
-    gpu_name: Optional[str] = None
+    gpu_name: str | None = None
     total_gb: float = 0.0
     free_gb: float = 0.0
     used_gb: float = 0.0
     utilization_pct: float = 0.0
-    loaded_model: Optional[str] = None
+    loaded_model: str | None = None
 
 
 class TryOnResponse(BaseModel):
     """Response for try-on requests."""
+
     job_id: str
     status: str
-    video_url: Optional[str] = None
+    video_url: str | None = None
     garment_category: str = ""
-    generation_time: Optional[float] = None
-    error: Optional[str] = None
+    generation_time: float | None = None
+    error: str | None = None
     num_frames: int = 0
     duration_seconds: float = 0.0
     resolution: str = ""
@@ -106,17 +112,19 @@ class TryOnResponse(BaseModel):
 
 class LoomResponse(BaseModel):
     """Response for LoomVideo multi-image generation."""
+
     job_id: str
     status: str
-    video_url: Optional[str] = None
+    video_url: str | None = None
     task: str = ""
     num_reference_images: int = 0
-    generation_time: Optional[float] = None
-    error: Optional[str] = None
+    generation_time: float | None = None
+    error: str | None = None
 
 
 class HealthResponse(BaseModel):
     """Health check response."""
+
     status: str = "ok"
     version: str
     gpu: GPUStatus

@@ -4,10 +4,10 @@ Loads and manages configuration from YAML files with environment overrides.
 """
 
 import os
-import yaml
-from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional
+from pathlib import Path
+
+import yaml
 from loguru import logger
 
 
@@ -42,7 +42,7 @@ class StoryConfig:
     extend_overlap: int = 4
 
 
-@dataclass 
+@dataclass
 class APIConfig:
     host: str = "0.0.0.0"
     port: int = 8000
@@ -53,6 +53,7 @@ class APIConfig:
 @dataclass
 class FitStreamConfig:
     """Main configuration for FitStream."""
+
     project_name: str = "FitStream"
     version: str = "0.1.0"
     model: ModelConfig = field(default_factory=ModelConfig)
@@ -61,9 +62,9 @@ class FitStreamConfig:
     api: APIConfig = field(default_factory=APIConfig)
     output_dir: str = "./outputs"
     models_dir: str = "./models"
-    
+
     @classmethod
-    def from_yaml(cls, path: Optional[str] = None) -> "FitStreamConfig":
+    def from_yaml(cls, path: str | None = None) -> "FitStreamConfig":
         if path is None:
             # Look for config in standard locations
             candidates = [
@@ -75,13 +76,13 @@ class FitStreamConfig:
                 if candidate.exists():
                     path = str(candidate)
                     break
-        
+
         config = cls()
-        
+
         if path and os.path.exists(path):
             with open(path) as f:
                 data = yaml.safe_load(f)
-            
+
             if data:
                 # Parse model config
                 if "models" in data:
@@ -98,7 +99,7 @@ class FitStreamConfig:
                             offload_model=m.get("offload_model", config.model.offload_model),
                             t5_cpu=m.get("t5_cpu", config.model.t5_cpu),
                         )
-                
+
                 # Parse generation config
                 if "generation" in data and "animate" in data["generation"]:
                     a = data["generation"]["animate"]
@@ -107,25 +108,27 @@ class FitStreamConfig:
                         height=a.get("height", config.animate.height),
                         num_frames=a.get("num_frames", config.animate.num_frames),
                         fps=a.get("fps", config.animate.fps),
-                        num_inference_steps=a.get("num_inference_steps", config.animate.num_inference_steps),
+                        num_inference_steps=a.get(
+                            "num_inference_steps", config.animate.num_inference_steps
+                        ),
                         guidance_scale=a.get("guidance_scale", config.animate.guidance_scale),
                         seed=a.get("seed", config.animate.seed),
                     )
-                
+
                 # Parse output config
                 if "output" in data:
                     config.output_dir = data["output"].get("directory", config.output_dir)
-            
+
             logger.info(f"Configuration loaded from {path}")
         else:
             logger.warning("No config file found, using defaults")
-        
+
         # Environment variable overrides
         config.model.device = os.environ.get("FITSTREAM_DEVICE", config.model.device)
         config.output_dir = os.environ.get("FITSTREAM_OUTPUT_DIR", config.output_dir)
-        
+
         return config
-    
+
     def get_preset(self, name: str) -> AnimateConfig:
         presets = {
             "draft": AnimateConfig(480, 320, 33, 16, 15, 4.0, -1),
@@ -136,7 +139,8 @@ class FitStreamConfig:
 
 
 # Singleton config
-_config: Optional[FitStreamConfig] = None
+_config: FitStreamConfig | None = None
+
 
 def get_config(reload: bool = False) -> FitStreamConfig:
     global _config

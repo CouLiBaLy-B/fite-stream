@@ -12,39 +12,40 @@ Categories:
 
 Usage:
     from fitstream.core.prompt_templates import PromptTemplateLibrary
-    
+
     lib = PromptTemplateLibrary()
-    
+
     # Get a template and fill it
     prompt = lib.get("fashion.runway", person="a woman", garment="red dress")
     # → "A woman walks confidently down a high-fashion runway wearing a red dress..."
-    
+
     # Browse categories
     categories = lib.list_categories()
     templates = lib.list_templates("actions")
 """
 
-from typing import Dict, List, Optional
 from dataclasses import dataclass
 
 
 @dataclass
 class PromptTemplate:
     """A reusable prompt template with fill-in variables."""
+
     id: str
     category: str
     name: str
-    template: str            # Use {variable} for placeholders
+    template: str  # Use {variable} for placeholders
     description: str = ""
-    variables: Optional[List[str]] = None  # Expected variables
-    tags: Optional[List[str]] = None
+    variables: list[str] | None = None  # Expected variables
+    tags: list[str] | None = None
     example: str = ""
 
     def __post_init__(self) -> None:
         if self.variables is None:
             # Auto-detect variables from template
             import re
-            self.variables = re.findall(r'\{(\w+)\}', self.template)
+
+            self.variables = re.findall(r"\{(\w+)\}", self.template)
         if self.tags is None:
             self.tags = [self.category]
 
@@ -55,10 +56,11 @@ class PromptTemplate:
             result = result.replace(f"{{{key}}}", str(value))
         # Remove unfilled placeholders with sensible defaults
         import re
-        result = re.sub(r'\{person\}', 'the person', result)
-        result = re.sub(r'\{garment\}', 'a stylish outfit', result)
-        result = re.sub(r'\{location\}', 'a beautiful setting', result)
-        result = re.sub(r'\{\w+\}', '', result)
+
+        result = re.sub(r"\{person\}", "the person", result)
+        result = re.sub(r"\{garment\}", "a stylish outfit", result)
+        result = re.sub(r"\{location\}", "a beautiful setting", result)
+        result = re.sub(r"\{\w+\}", "", result)
         return result.strip()
 
 
@@ -66,7 +68,7 @@ class PromptTemplate:
 # Template Library
 # ============================================================
 
-TEMPLATES: List[PromptTemplate] = [
+TEMPLATES: list[PromptTemplate] = [
     # ---------- ACTIONS ----------
     PromptTemplate(
         id="actions.walk",
@@ -251,43 +253,43 @@ TEMPLATES: List[PromptTemplate] = [
 class PromptTemplateLibrary:
     """
     Browsable library of prompt templates.
-    
+
     Usage:
         lib = PromptTemplateLibrary()
-        
+
         # Get and fill a template
         prompt = lib.get("fashion.runway", person="a model", garment="red gown")
-        
+
         # List categories
         categories = lib.list_categories()  # ["actions", "locations", ...]
-        
+
         # Browse templates in a category
         templates = lib.list_templates("camera")
     """
-    
+
     def __init__(self) -> None:
-        self._templates: Dict[str, PromptTemplate] = {t.id: t for t in TEMPLATES}
-    
-    def get(self, template_id: str, **kwargs) -> Optional[str]:
+        self._templates: dict[str, PromptTemplate] = {t.id: t for t in TEMPLATES}
+
+    def get(self, template_id: str, **kwargs) -> str | None:
         template = self._templates.get(template_id)
         if template:
             return template.fill(**kwargs)
         return None
-    
-    def get_template(self, template_id: str) -> Optional[PromptTemplate]:
+
+    def get_template(self, template_id: str) -> PromptTemplate | None:
         """Get a template by ID and fill in variables."""
         return self._templates.get(template_id)
-    
-    def list_categories(self) -> List[str]:
+
+    def list_categories(self) -> list[str]:
         """Get a template object by ID."""
         """List all template categories."""
         return sorted(set(t.category for t in self._templates.values()))
-    
-    def list_templates(self, category: Optional[str] = None) -> List[dict]:
+
+    def list_templates(self, category: str | None = None) -> list[dict]:
         templates = list(self._templates.values())
         if category:
             templates = [t for t in templates if t.category == category]
-        
+
         return [
             {
                 "id": t.id,
@@ -295,22 +297,27 @@ class PromptTemplateLibrary:
                 "name": t.name,
                 "description": t.description or t.template[:80] + "...",
                 "variables": t.variables,
-                "example": t.fill(person="a young woman", garment="an elegant dress",
-                                  location="a sunlit garden")[:100] + "...",
+                "example": t.fill(
+                    person="a young woman", garment="an elegant dress", location="a sunlit garden"
+                )[:100]
+                + "...",
             }
             for t in sorted(templates, key=lambda x: (x.category, x.name))
         ]
-    
-    def search(self, query: str) -> List[dict]:
+
+    def search(self, query: str) -> list[dict]:
         """List templates, optionally filtered by category."""
         q = query.lower()
         results = [
-            t for t in self._templates.values()
-            if q in t.name.lower() or q in t.template.lower() or q in t.description.lower()
+            t
+            for t in self._templates.values()
+            if q in t.name.lower()
+            or q in t.template.lower()
+            or q in t.description.lower()
             or any(q in tag for tag in t.tags)
         ]
         return [{"id": t.id, "name": t.name, "category": t.category} for t in results]
-    
+
     def count(self) -> int:
         """Search templates by name, description, or template text."""
         """Count."""

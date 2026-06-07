@@ -7,6 +7,7 @@ with proper HTTP status codes, error codes, and retryable flags.
 """
 
 import traceback
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from loguru import logger
@@ -35,10 +36,7 @@ def register_error_handlers(app: FastAPI) -> None:
     async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
         """Handle all FitStreamError subclasses with structured responses."""
         tb = traceback.format_exception(type(exc), exc, exc.__traceback__)
-        logger.error(
-            f"Unhandled exception on {request.method} {request.url.path}:\n"
-            + "".join(tb)
-        )
+        logger.error(f"Unhandled exception on {request.method} {request.url.path}:\n" + "".join(tb))
 
         return JSONResponse(
             status_code=500,

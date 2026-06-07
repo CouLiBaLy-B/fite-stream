@@ -1,8 +1,8 @@
 """Tests for analytics engine."""
 
-import time
 import pytest
-from fitstream.core.analytics import AnalyticsEngine, GenerationEvent
+
+from fitstream.core.analytics import AnalyticsEngine
 
 
 class TestAnalyticsEngine:
@@ -18,12 +18,30 @@ class TestAnalyticsEngine:
         assert report["total_generations"] == 0
 
     def test_report_with_data(self):
-        self.engine.record(type="animate", style="cinematic", generation_time=40.0,
-                           num_frames=49, success=True, prompt="test prompt")
-        self.engine.record(type="story", style="anime", generation_time=120.0,
-                           num_frames=147, success=True, prompt="story test")
-        self.engine.record(type="animate", style="cinematic", generation_time=45.0,
-                           num_frames=49, success=False, prompt="failed test")
+        self.engine.record(
+            type="animate",
+            style="cinematic",
+            generation_time=40.0,
+            num_frames=49,
+            success=True,
+            prompt="test prompt",
+        )
+        self.engine.record(
+            type="story",
+            style="anime",
+            generation_time=120.0,
+            num_frames=147,
+            success=True,
+            prompt="story test",
+        )
+        self.engine.record(
+            type="animate",
+            style="cinematic",
+            generation_time=45.0,
+            num_frames=49,
+            success=False,
+            prompt="failed test",
+        )
 
         report = self.engine.get_report(hours=1)
         assert report["total_generations"] == 3
@@ -91,7 +109,7 @@ class TestAnalyticsEngine:
         self.engine.record(type="animate", success=False)
 
         report = self.engine.get_report(hours=1)
-        assert abs(report["success_rate"] - 2/3) < 0.01
+        assert abs(report["success_rate"] - 2 / 3) < 0.01
 
 
 if __name__ == "__main__":
