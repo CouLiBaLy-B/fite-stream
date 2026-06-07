@@ -3,492 +3,652 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FitStream — Creator Studio</title>
+<title>Create — FitStream</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+/* ═══════════════════════════════════════════ DESIGN SYSTEM (shared) ═══════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#07070e;--glass:rgba(255,255,255,.04);--glass2:rgba(255,255,255,.07);
-  --glass-border:rgba(255,255,255,.08);--glass-hover:rgba(255,255,255,.12);
-  --pr:#8b5cf6;--pr2:#a78bfa;--pr-glow:rgba(139,92,246,.25);
-  --ac:#06d6a0;--ac2:#34d399;--pink:#ec4899;--blue:#3b82f6;--orange:#f59e0b;--red:#ef4444;
-  --tx:#f1f5f9;--tx2:#94a3b8;--tx3:#64748b;
-  --r:12px;--r2:16px;--blur:blur(20px);
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --bg:#050510;--bg2:#0a0a1a;
+  --glass:rgba(255,255,255,.03);--glass2:rgba(255,255,255,.06);--glass3:rgba(255,255,255,.10);
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --text:#f0f0f8;--text2:#8890ae;--text3:#555a78;
+  --purple:#8b5cf6;--purple2:#a78bfa;--purple-glow:rgba(139,92,246,.28);
+  --emerald:#06d6a0;--emerald2:#34d399;
+  --pink:#ec4899;--blue:#3b82f6;--amber:#f59e0b;--red:#ef4444;
+  --radius:14px;--radius-lg:20px;--radius-xl:28px;
+  --blur:blur(24px);--blur-lite:blur(12px);
+  --shadow:0 4px 32px rgba(0,0,0,.5);--shadow-lg:0 8px 64px rgba(0,0,0,.6);
+  --transition:.28s cubic-bezier(.4,0,.2,1);
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"SF Mono","Fira Code","Cascadia Code",Consolas,monospace;
 }
-body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh}
-
-/* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;background:rgba(7,7,14,.85);backdrop-filter:var(--blur);border-bottom:1px solid var(--glass-border)}
-.nav-logo{font-size:20px;font-weight:800}.nav-logo span{background:linear-gradient(135deg,var(--pr),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav-links{display:flex;gap:4px}
-.nav-links a{color:var(--tx2);text-decoration:none;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;transition:all .2s}
-.nav-links a:hover,.nav-links a.active{color:var(--tx);background:var(--glass2)}
-.nav-gpu{font-size:11px;padding:6px 14px;border-radius:20px;background:var(--glass);border:1px solid var(--glass-border);color:var(--tx3)}
-.nav-gpu.online{color:var(--ac);border-color:rgba(6,214,160,.3)}
-
-/* BG */
-.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.2}
-.orb-1{width:500px;height:500px;background:var(--pr);top:-100px;left:-100px}
-.orb-2{width:400px;height:400px;background:var(--pink);bottom:-100px;right:-100px}
-
-/* LAYOUT */
-.app{display:flex;min-height:100vh;padding-top:56px;position:relative;z-index:1}
-.sidebar{width:380px;min-width:380px;border-right:1px solid var(--glass-border);background:rgba(7,7,14,.6);backdrop-filter:var(--blur);overflow-y:auto;padding-bottom:80px}
-.main-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px}
-
-/* MODE TABS */
-.mode-tabs{display:flex;border-bottom:1px solid var(--glass-border);background:rgba(255,255,255,.02);overflow-x:auto}
-.mode-tab{padding:14px 18px;font-size:12px;font-weight:700;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px}
-.mode-tab:hover{color:var(--tx2)}
-.mode-tab.active{color:var(--pr2);border-bottom-color:var(--pr)}
-
-/* FORM */
-.form-area{padding:20px}
-.panel{display:none}.panel.active{display:block}
-.form-group{margin-bottom:18px}
-label{display:block;font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px}
-textarea,input[type="text"],select{
-  width:100%;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid var(--glass-border);
-  border-radius:var(--r);color:var(--tx);font-size:14px;font-family:inherit;transition:all .2s;resize:vertical;
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(139,92,246,.06),transparent),radial-gradient(ellipse 60% 50% at 90% 80%,rgba(236,72,153,.04),transparent);
 }
-textarea:focus,input:focus,select:focus{outline:none;border-color:var(--pr);box-shadow:0 0 0 3px var(--pr-glow)}
-textarea{min-height:100px}
-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
-.row{display:flex;gap:12px}.row>*{flex:1}
 
-/* UPLOAD */
-.upload{
-  border:2px dashed var(--glass-border);border-radius:var(--r2);padding:28px;text-align:center;
-  cursor:pointer;transition:all .25s;background:rgba(255,255,255,.01);position:relative;overflow:hidden;
+/* ═══════════════════════ NAV ═══════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  padding:10px 24px;display:flex;align-items:center;justify-content:space-between;
+  background:rgba(5,5,16,.75);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border-bottom:1px solid var(--border);
 }
-.upload:hover{border-color:var(--pr);background:rgba(139,92,246,.04)}
-.upload.has-img{padding:0;border-style:solid;border-color:var(--ac)}
-.upload img{width:100%;height:180px;object-fit:cover;border-radius:calc(var(--r2) - 2px)}
-.upload .up-icon{font-size:32px;margin-bottom:8px}
-.upload .up-text{font-size:12px;color:var(--tx3)}
-.upload input{display:none}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;letter-spacing:-.5px;text-decoration:none;color:var(--text)}
+.nav-brand .gradient{background:linear-gradient(135deg,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{color:var(--text2);text-decoration:none;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;transition:all var(--transition)}
+.nav-tab:hover,.nav-tab.active{color:var(--text);background:var(--glass2)}
 
-/* STYLE CHIPS */
-.style-chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{
-  padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
-  background:var(--glass);border:1px solid var(--glass-border);color:var(--tx2);transition:all .2s;
+main{padding-top:72px;min-height:calc(100vh - 200px)}
+.container{max-width:1320px;margin:0 auto;padding:24px}
+
+/* ═══════════════════════ GLASS ═══════════════════════ */
+.glass{background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);transition:all var(--transition)}
+.glass:hover{border-color:var(--border2);box-shadow:var(--shadow-lg)}
+
+/* ═══════════════════════ BUTTONS ═══════════════════════ */
+.btn{
+  padding:12px 24px;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;border:none;
+  display:inline-flex;align-items:center;gap:8px;transition:all var(--transition);
+  text-decoration:none;font-family:var(--font);letter-spacing:.2px;white-space:nowrap;
 }
-.chip:hover{background:var(--glass-hover);color:var(--tx)}
-.chip.active{background:rgba(139,92,246,.2);border-color:var(--pr);color:var(--pr2)}
+.btn-primary{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;box-shadow:0 4px 20px var(--purple-glow)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--purple-glow);filter:brightness(1.12)}
+.btn-primary:disabled{opacity:.5;pointer-events:none;transform:none;filter:none}
+.btn-secondary{background:var(--glass2);color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover{background:var(--glass3)}
+.btn-sm{padding:8px 16px;font-size:12px;border-radius:10px}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.btn-emerald{background:rgba(6,214,160,.12);color:var(--emerald);border:1px solid rgba(6,214,160,.25)}
 
-/* TEMPLATE PICKER */
-.tpl-list{max-height:200px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:var(--r);margin-top:6px}
-.tpl-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s}
-.tpl-item:hover{background:var(--glass2)}
-.tpl-item .tpl-name{font-weight:600;color:var(--tx)}
-.tpl-item .tpl-preview{font-size:11px;color:var(--tx3);margin-top:2px}
-
-/* GENERATE BTN */
-.gen-btn{
-  position:sticky;bottom:0;padding:16px 20px;background:rgba(7,7,14,.9);
-  backdrop-filter:var(--blur);border-top:1px solid var(--glass-border);
+/* ═══════════════════════ INPUTS ═══════════════════════ */
+input,textarea,select{
+  width:100%;padding:12px 16px;border-radius:var(--radius);font-size:14px;font-family:var(--font);
+  background:var(--glass2);border:1px solid var(--border);color:var(--text);
+  transition:all var(--transition);outline:none;
 }
-.btn-gen{
-  width:100%;padding:15px;border:none;border-radius:var(--r);font-size:15px;font-weight:800;
-  cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:all .25s;
-  background:linear-gradient(135deg,var(--pr),#7c3aed);color:#fff;box-shadow:0 4px 20px var(--pr-glow);
+input:focus,textarea:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(139,92,246,.12)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+textarea{resize:vertical;min-height:80px}
+label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238890ae' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+select option{background:var(--bg2);color:var(--text)}
+
+/* ═══════════════════════ BADGES ═══════════════════════ */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 10px;border-radius:8px;text-transform:uppercase;letter-spacing:.6px}
+.badge-purple{background:rgba(139,92,246,.15);color:var(--purple2)}
+.badge-pink{background:rgba(236,72,153,.15);color:var(--pink)}
+.badge-emerald{background:rgba(6,214,160,.15);color:var(--emerald)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-amber{background:rgba(245,158,11,.15);color:var(--amber)}
+
+/* ═══════════════════════ PAGE LAYOUT ═══════════════════════ */
+.page-header{padding:24px 0 16px}
+.page-title{font-size:28px;font-weight:800;letter-spacing:-.5px}
+.page-sub{color:var(--text2);font-size:14px;margin-top:4px}
+
+/* ═══════════════════════ MODE TABS ═══════════════════════ */
+.mode-tabs{display:flex;gap:4px;margin-bottom:24px;flex-wrap:wrap}
+.mode-tab{
+  padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border);background:var(--glass);
+  color:var(--text2);transition:all var(--transition);text-decoration:none;
+  display:flex;align-items:center;gap:6px;
 }
-.btn-gen:hover{transform:translateY(-1px);box-shadow:0 8px 32px var(--pr-glow);filter:brightness(1.1)}
-.btn-gen:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none}
+.mode-tab:hover{color:var(--text);background:var(--glass2);border-color:var(--border2)}
+.mode-tab.active{color:var(--text);background:var(--glass3);border-color:var(--purple);box-shadow:0 0 20px rgba(139,92,246,.12)}
+.mode-icon{font-size:18px}
 
-/* OUTPUT */
-.output{max-width:900px;width:100%;text-align:center}
-.placeholder{padding:60px 40px;color:var(--tx3)}
-.placeholder .ph-icon{font-size:64px;margin-bottom:16px;opacity:.5}
-.placeholder h3{font-size:16px;color:var(--tx2);margin-bottom:6px}
-.video-box{border-radius:var(--r2);overflow:hidden;border:1px solid var(--glass-border);background:#000;box-shadow:var(--shadow)}
-.video-box video{width:100%;display:block}
+.panel{display:none}
+.panel.active{display:block}
 
-/* STATUS */
-.status{margin-top:16px;padding:12px 18px;border-radius:var(--r);font-size:13px;display:none;align-items:center;gap:10px}
-.status.show{display:flex}
-.status.proc{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);color:var(--pr2)}
-.status.done{background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);color:var(--ac)}
-.status.fail{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:var(--red)}
-.spinner{width:14px;height:14px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+.create-layout{display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start}
 
-/* VIDEO ACTIONS */
-.video-actions{display:flex;gap:8px;margin-top:16px;justify-content:center;flex-wrap:wrap}
-.vid-btn{
-  padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
-  background:var(--glass);border:1px solid var(--glass-border);color:var(--tx2);transition:all .2s;text-decoration:none;
+.form-section{margin-bottom:20px}
+.form-section-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px}
+.form-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.upload-zone{
+  border:2px dashed var(--border);border-radius:var(--radius-lg);padding:40px 20px;
+  text-align:center;cursor:pointer;transition:all var(--transition);position:relative;
+  background:var(--glass);
 }
-.vid-btn:hover{background:var(--glass-hover);color:var(--tx)}
+.upload-zone:hover{border-color:var(--purple);background:var(--glass2)}
+.upload-zone.has-file{border-color:var(--emerald);border-style:solid;background:rgba(6,214,160,.04)}
+.upload-zone .icon{font-size:48px;margin-bottom:12px;display:block}
+.upload-zone .text{font-size:14px;color:var(--text2)}
+.upload-zone .hint{font-size:11px;color:var(--text3);margin-top:6px}
+.upload-zone img{max-width:100%;max-height:200px;border-radius:var(--radius);margin-top:12px}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
 
-/* RESPONSIVE */
+.style-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.style-chip{
+  padding:10px 14px;border-radius:var(--radius);font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border);background:var(--glass);
+  color:var(--text2);transition:all var(--transition);text-align:center;
+}
+.style-chip:hover{color:var(--text);background:var(--glass2);border-color:var(--border2)}
+.style-chip.active{color:var(--purple2);background:rgba(139,92,246,.12);border-color:var(--purple)}
+
+.preset-row{display:flex;gap:8px}
+.preset-chip{
+  flex:1;padding:10px;border-radius:var(--radius);font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border);background:var(--glass);
+  color:var(--text2);transition:all var(--transition);text-align:center;
+}
+.preset-chip:hover{color:var(--text);background:var(--glass2)}
+.preset-chip.active{color:var(--emerald);background:rgba(6,214,160,.08);border-color:var(--emerald)}
+
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ═══════════════════════ SIDEBAR ═══════════════════════ */
+.sidebar .glass{padding:20px;margin-bottom:16px}
+.sidebar-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:14px;text-transform:uppercase;letter-spacing:.6px}
+
+.job-list{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto}
+.job-item{
+  padding:12px 14px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--glass);transition:all var(--transition);
+}
+.job-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.job-type{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.job-prompt{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.progress-bar{height:4px;border-radius:2px;background:var(--glass2);margin-top:8px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.progress-fill.done{background:var(--emerald)}
+.progress-fill.proc{background:var(--purple)}
+.progress-fill.fail{background:var(--red)}
+
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.status-dot.done{background:var(--emerald);box-shadow:0 0 8px rgba(6,214,160,.4)}
+.status-dot.proc{background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,.4);animation:pulse 1.5s ease infinite}
+.status-dot.fail{background:var(--red)}
+.status-dot.queued{background:var(--text3)}
+
+.video-preview video{width:100%;border-radius:var(--radius);margin-top:8px}
+
+/* ═══════════════════════ EMPTY STATES ═══════════════════════ */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-state .icon{font-size:40px;margin-bottom:12px;display:block;opacity:.5}
+.empty-state .text{font-size:13px}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:fadeIn .4s ease forwards}
+
 @media(max-width:900px){
-  .app{flex-direction:column}
-  .sidebar{width:100%;min-width:auto;border-right:none;border-bottom:1px solid var(--glass-border)}
-  .main-area{min-height:50vh}
-  .nav-links{display:none}
+  .create-layout{grid-template-columns:1fr}
+  .sidebar{order:-1}
+  .style-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+  .info-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
-<div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
-
-<!-- NAV -->
 <nav>
-  <div class="nav-logo">🎬 <span>FitStream</span></div>
-  <div class="nav-links">
-    <a href="index.html">Home</a>
-    <a href="create.html" class="active">Create</a>
-    <a href="gallery.html">Gallery</a>
-    <a href="monitor.html">Monitor</a>
+  <a href="index.html" class="nav-brand">🎬 <span class="gradient">FitStream</span></a>
+  <div class="nav-tabs">
+    <a href="index.html" class="nav-tab">Home</a>
+    <a href="create.html" class="nav-tab active">Create</a>
+    <a href="gallery.html" class="nav-tab">Gallery</a>
+    <a href="monitor.html" class="nav-tab">Monitor</a>
   </div>
-  <div class="nav-gpu" id="gpuBadge">⚪ GPU...</div>
 </nav>
 
-<div class="app">
-  <!-- SIDEBAR -->
-  <div class="sidebar">
+<main>
+  <div class="container">
+
+    <div class="page-header">
+      <h1 class="page-title">🎬 Creator Studio</h1>
+      <p class="page-sub">Select a mode, upload your images, write a prompt, and generate AI-powered videos.</p>
+    </div>
+
     <!-- MODE TABS -->
-    <div class="mode-tabs">
-      <div class="mode-tab active" data-mode="animate" onclick="setMode('animate')">📸 Animate</div>
-      <div class="mode-tab" data-mode="story" onclick="setMode('story')">📖 Story</div>
-      <div class="mode-tab" data-mode="tryon" onclick="setMode('tryon')">👗 Try-On</div>
-      <div class="mode-tab" data-mode="style" onclick="setMode('style')">🎭 Style</div>
-      <div class="mode-tab" data-mode="compose" onclick="setMode('compose')">🎨 Compose</div>
+    <div class="mode-tabs" id="modeTabs">
+      <button class="mode-tab active" data-mode="animate"><span class="mode-icon">📸</span> Animate</button>
+      <button class="mode-tab" data-mode="story"><span class="mode-icon">📖</span> Story</button>
+      <button class="mode-tab" data-mode="tryon"><span class="mode-icon">👗</span> Try-On</button>
+      <button class="mode-tab" data-mode="compose"><span class="mode-icon">🎨</span> Compose</button>
+      <button class="mode-tab" data-mode="style"><span class="mode-icon">🎭</span> Style Transfer</button>
+      <button class="mode-tab" data-mode="realtime"><span class="mode-icon">⚡</span> Real-Time</button>
     </div>
 
-    <div class="form-area">
+    <div class="create-layout">
+      <!-- MAIN FORM -->
+      <div>
 
-      <!-- ═══ ANIMATE ═══ -->
-      <div class="panel active" id="p-animate">
-        <div class="form-group">
-          <label>Person Image</label>
-          <div class="upload" id="u-animate" onclick="$f('f-animate').click()">
-            <div class="up-icon">📷</div><div class="up-text">Click to upload a photo</div>
-            <input type="file" id="f-animate" accept="image/*" onchange="onUpload(this,'u-animate')">
+        <!-- ANIMATE PANEL -->
+        <div class="panel active" id="panel-animate">
+          <div class="glass" style="padding:24px">
+            <div class="form-section">
+              <div class="form-section-title">📷 Reference Image</div>
+              <div class="upload-zone" id="upload-animate">
+                <span class="icon">🖼️</span>
+                <div class="text">Drop a person photo here or click to browse</div>
+                <div class="hint">JPG, PNG, WebP — Max 50MB — Portraits work best</div>
+                <img id="preview-animate" style="display:none">
+                <input type="file" accept="image/jpeg,image/png,image/webp" id="file-animate">
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">✏️ Prompt</div>
+              <textarea placeholder="Describe the animation you want...&#10;&#10;e.g. The person walks confidently through a sunlit garden, stops to smell a rose, then continues down a cobblestone path with a gentle breeze flowing through their hair." id="prompt-animate" rows="3"></textarea>
+            </div>
+            <div class="info-grid">
+              <div><label>Style</label><select id="style-animate"></select></div>
+              <div><label>Quality</label><select id="preset-animate"><option value="draft">⚡ Draft (fast)</option><option value="standard" selected>🎯 Standard</option><option value="high">💎 High (best)</option></select></div>
+              <div><label>Frames</label><input type="number" id="frames-animate" value="49" min="16" max="128"></div>
+              <div><label>Steps</label><input type="number" id="steps-animate" value="30" min="5" max="100"></div>
+            </div>
+            <button class="btn btn-primary" onclick="submitJob('animate')" id="btn-animate" style="width:100%;margin-top:16px;justify-content:center;padding:14px">
+              🎬 Generate Animation
+            </button>
           </div>
         </div>
-        <div class="form-group">
-          <label>Prompt</label>
-          <textarea id="animate-prompt" placeholder="A person walks through a sunlit garden, gentle breeze flowing through their hair, smiling warmly..."></textarea>
-        </div>
-        <div class="form-group">
-          <label>Or pick a template</label>
-          <select id="animate-tpl" onchange="applyTemplate(this.value,'animate-prompt')">
-            <option value="">— Choose a template —</option>
-          </select>
-        </div>
-        <div class="row">
-          <div class="form-group"><label>Style</label>
-            <select id="animate-style"><option value="cinematic">🎬 Cinematic</option><option value="photorealistic">📷 Photorealistic</option><option value="dreamy">✨ Dreamy</option><option value="warm">☀️ Warm</option><option value="noir">🌑 Noir</option></select>
+
+        <!-- STORY PANEL -->
+        <div class="panel" id="panel-story">
+          <div class="glass" style="padding:24px">
+            <div class="form-section">
+              <div class="form-section-title">📷 Reference Image</div>
+              <div class="upload-zone" id="upload-story">
+                <span class="icon">🖼️</span>
+                <div class="text">Drop a person photo here</div>
+                <img id="preview-story" style="display:none">
+                <input type="file" accept="image/jpeg,image/png,image/webp" id="file-story">
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">📖 Story</div>
+              <textarea placeholder="Write a multi-sentence story...&#10;&#10;e.g. Marie walks through a Parisian street. She enters a bakery. She buys a croissant. She sits at a café terrace. She watches the sunset over the Seine." id="story-text" rows="4"></textarea>
+            </div>
+            <div class="info-grid">
+              <div><label>Style</label><select id="style-story"></select></div>
+              <div><label>Quality</label><select id="preset-story"><option value="draft">⚡ Draft</option><option value="standard" selected>🎯 Standard</option><option value="high">💎 High</option></select></div>
+              <div><label>Max Scenes</label><input type="number" value="5" min="1" max="8" id="max-scenes"></div>
+              <div><label>Transition</label><select id="transition"><option value="crossfade">Crossfade</option><option value="none">None</option></select></div>
+            </div>
+            <button class="btn btn-primary" onclick="submitJob('story')" style="width:100%;margin-top:16px;justify-content:center;padding:14px">
+              📖 Generate Story
+            </button>
           </div>
-          <div class="form-group"><label>Quality</label>
-            <select id="animate-preset"><option value="draft">⚡ Draft</option><option value="standard" selected>⭐ Standard</option><option value="high">💎 High</option></select>
+        </div>
+
+        <!-- TRY-ON PANEL -->
+        <div class="panel" id="panel-tryon">
+          <div class="glass" style="padding:24px">
+            <div class="form-section">
+              <div class="form-section-title">👤 Person Image</div>
+              <div class="upload-zone" id="upload-person">
+                <span class="icon">🧍</span>
+                <div class="text">Drop a person photo</div>
+                <img id="preview-person" style="display:none">
+                <input type="file" accept="image/jpeg,image/png,image/webp" id="file-person">
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">👗 Garment Image</div>
+              <div class="upload-zone" id="upload-garment">
+                <span class="icon">👔</span>
+                <div class="text">Drop a garment image</div>
+                <img id="preview-garment" style="display:none">
+                <input type="file" accept="image/jpeg,image/png,image/webp" id="file-garment">
+              </div>
+            </div>
+            <div class="info-grid">
+              <div><label>Category</label><select id="tryon-category"><option value="auto">Auto-Detect</option><option value="tops">Tops</option><option value="bottoms">Bottoms</option><option value="dresses">Dresses</option><option value="outerwear">Outerwear</option><option value="full-body">Full Body</option></select></div>
+              <div><label>Style</label><select id="style-tryon"></select></div>
+              <div><label>Quality</label><select id="preset-tryon"><option value="draft">⚡ Draft</option><option value="standard" selected>🎯 Standard</option><option value="high">💎 High</option></select></div>
+            </div>
+            <button class="btn btn-primary" onclick="submitJob('tryon')" style="width:100%;margin-top:16px;justify-content:center;padding:14px">
+              👗 Generate Try-On
+            </button>
           </div>
         </div>
+
+        <!-- COMPOSE PANEL -->
+        <div class="panel" id="panel-compose">
+          <div class="glass" style="padding:24px">
+            <div class="form-section">
+              <div class="form-section-title">🖼️ Reference Images (2-8)</div>
+              <div id="compose-uploads" style="display:flex;flex-direction:column;gap:10px">
+                <div class="upload-zone" id="upload-compose-0">
+                  <span class="icon">📷</span>
+                  <div class="text">Drop image 1 here (@Image 1)</div>
+                  <img id="preview-compose-0" style="display:none">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" id="file-compose-0">
+                </div>
+                <div class="upload-zone" id="upload-compose-1">
+                  <span class="icon">📷</span>
+                  <div class="text">Drop image 2 here (@Image 2)</div>
+                  <img id="preview-compose-1" style="display:none">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" id="file-compose-1">
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="addComposeSlot()" style="margin-top:8px">+ Add Image</button>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">✏️ Prompt (use @Image 1, @Image 2, ...)</div>
+              <textarea placeholder="The woman (@Image 1) wearing the red dress (@Image 2) walks through a garden..." id="prompt-compose" rows="3"></textarea>
+            </div>
+            <div class="info-grid">
+              <div><label>Style</label><select id="style-compose"></select></div>
+              <div><label>Frames</label><input type="number" value="97" min="16" max="128" id="frames-compose"></div>
+            </div>
+            <button class="btn btn-primary" onclick="submitJob('compose')" style="width:100%;margin-top:16px;justify-content:center;padding:14px">
+              🎨 Generate Composition
+            </button>
+          </div>
+        </div>
+
+        <!-- STYLE TRANSFER PANEL -->
+        <div class="panel" id="panel-style">
+          <div class="glass" style="padding:24px">
+            <div class="form-section">
+              <div class="form-section-title">📷 Reference Image</div>
+              <div class="upload-zone" id="upload-style">
+                <span class="icon">🖼️</span>
+                <div class="text">Drop an image to restyle</div>
+                <img id="preview-style" style="display:none">
+                <input type="file" accept="image/jpeg,image/png,image/webp" id="file-style">
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">🎭 Style Presets</div>
+              <div class="style-grid" id="stylePresets">
+                <div class="style-chip active" data-style="cinematic">🎬 Cinematic</div>
+                <div class="style-chip" data-style="ghibli">🏯 Ghibli</div>
+                <div class="style-chip" data-style="pixar">🧊 Pixar</div>
+                <div class="style-chip" data-style="comic">💥 Comic</div>
+                <div class="style-chip" data-style="noir">🌑 Noir</div>
+                <div class="style-chip" data-style="cyberpunk">🌆 Cyberpunk</div>
+                <div class="style-chip" data-style="ukiyo-e">🎌 Ukiyo-e</div>
+                <div class="style-chip" data-style="impressionist">🌸 Impressionist</div>
+                <div class="style-chip" data-style="watercolor">🎨 Watercolor</div>
+                <div class="style-chip" data-style="oil-painting">🖼️ Oil Painting</div>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">✏️ Prompt</div>
+              <textarea placeholder="Describe the scene..." id="prompt-style" rows="2"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="submitJob('style')" style="width:100%;margin-top:16px;justify-content:center;padding:14px">
+              🎭 Apply Style
+            </button>
+          </div>
+        </div>
+
+        <!-- REALTIME PANEL -->
+        <div class="panel" id="panel-realtime">
+          <div class="glass" style="padding:24px">
+            <div class="form-section">
+              <div class="form-section-title">📷 Reference Image</div>
+              <div class="upload-zone" id="upload-realtime">
+                <span class="icon">⚡</span>
+                <div class="text">Drop a person photo for fast generation</div>
+                <img id="preview-realtime" style="display:none">
+                <input type="file" accept="image/jpeg,image/png,image/webp" id="file-realtime">
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">✏️ Prompt</div>
+              <textarea placeholder="Describe the action..." id="prompt-realtime" rows="2"></textarea>
+            </div>
+            <button class="btn btn-emerald" onclick="submitJob('realtime')" style="width:100%;margin-top:16px;justify-content:center;padding:14px">
+              ⚡ Fast Generate
+            </button>
+          </div>
+        </div>
+
       </div>
 
-      <!-- ═══ STORY ═══ -->
-      <div class="panel" id="p-story">
-        <div class="form-group">
-          <label>Character Image</label>
-          <div class="upload" id="u-story" onclick="$f('f-story').click()">
-            <div class="up-icon">📷</div><div class="up-text">Upload the main character</div>
-            <input type="file" id="f-story" accept="image/*" onchange="onUpload(this,'u-story')">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Story</label>
-          <textarea id="story-text" style="min-height:160px" placeholder="Marie walks through a sunny Parisian street. She stops at a charming flower shop and picks a bouquet. She sits at a café terrace watching the golden sunset over the Seine."></textarea>
-        </div>
-        <div class="row">
-          <div class="form-group"><label>Style</label>
-            <select id="story-style"><option value="cinematic" selected>🎬 Cinematic</option><option value="photorealistic">📷 Photo</option><option value="anime">🎨 Anime</option><option value="dreamy">✨ Dreamy</option></select>
-          </div>
-          <div class="form-group"><label>Max Scenes</label>
-            <select id="story-scenes"><option value="3">3</option><option value="5" selected>5</option><option value="8">8</option></select>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ TRYON ═══ -->
-      <div class="panel" id="p-tryon">
-        <div class="row" style="margin-bottom:0">
-          <div class="form-group"><label>Person</label>
-            <div class="upload" id="u-tryon-p" onclick="$f('f-tryon-p').click()" style="padding:20px">
-              <div class="up-icon">🧑</div><div class="up-text">Person</div>
-              <input type="file" id="f-tryon-p" accept="image/*" onchange="onUpload(this,'u-tryon-p')">
+      <!-- SIDEBAR: JOB HISTORY -->
+      <div class="sidebar">
+        <div class="glass">
+          <div class="sidebar-title">🔄 Recent Jobs</div>
+          <div class="job-list" id="jobList">
+            <div class="empty-state">
+              <span class="icon">📋</span>
+              <div class="text">No jobs yet. Generate something!</div>
             </div>
           </div>
-          <div class="form-group"><label>Garment</label>
-            <div class="upload" id="u-tryon-g" onclick="$f('f-tryon-g').click()" style="padding:20px">
-              <div class="up-icon">👗</div><div class="up-text">Garment</div>
-              <input type="file" id="f-tryon-g" accept="image/*" onchange="onUpload(this,'u-tryon-g')">
-            </div>
-          </div>
         </div>
-        <div class="form-group"><label>Description (optional)</label>
-          <textarea id="tryon-prompt" style="min-height:60px" placeholder="an elegant red evening dress with lace details"></textarea>
-        </div>
-        <div class="row">
-          <div class="form-group"><label>Category</label>
-            <select id="tryon-cat"><option value="auto">🔍 Auto</option><option value="upper">👕 Upper</option><option value="lower">👖 Lower</option><option value="dress">👗 Dress</option><option value="shoes">👟 Shoes</option><option value="accessories">💍 Acc.</option></select>
-          </div>
-          <div class="form-group"><label>Action</label>
-            <select id="tryon-action"><option value="walking naturally, showing off the outfit">Walking</option><option value="posing on a runway, fashion show">Runway</option><option value="turning slowly to show all angles">360° Turn</option><option value="standing confidently, slight smile">Standing</option></select>
+        <div class="glass">
+          <div class="sidebar-title">📊 Quick Stats</div>
+          <div style="display:flex;justify-content:space-around;text-align:center">
+            <div><div style="font-size:24px;font-weight:800;color:var(--purple2)" id="statTotal">0</div><div style="font-size:10px;color:var(--text3);margin-top:2px">TOTAL</div></div>
+            <div><div style="font-size:24px;font-weight:800;color:var(--emerald)" id="statDone">0</div><div style="font-size:10px;color:var(--text3);margin-top:2px">DONE</div></div>
+            <div><div style="font-size:24px;font-weight:800;color:var(--red)" id="statFailed">0</div><div style="font-size:10px;color:var(--text3);margin-top:2px">FAILED</div></div>
           </div>
         </div>
       </div>
-
-      <!-- ═══ STYLE TRANSFER ═══ -->
-      <div class="panel" id="p-style">
-        <div class="form-group">
-          <label>Person Image</label>
-          <div class="upload" id="u-style" onclick="$f('f-style').click()">
-            <div class="up-icon">📷</div><div class="up-text">Upload a photo</div>
-            <input type="file" id="f-style" accept="image/*" onchange="onUpload(this,'u-style')">
-          </div>
-        </div>
-        <div class="form-group"><label>Prompt</label>
-          <textarea id="style-prompt" placeholder="Walking through a magical forest"></textarea>
-        </div>
-        <div class="form-group"><label>Choose Style</label>
-          <div class="style-chips" id="styleChips">
-            <div class="chip active" data-style="ghibli" onclick="pickStyle(this)">🏯 Ghibli</div>
-            <div class="chip" data-style="pixar" onclick="pickStyle(this)">🧊 Pixar</div>
-            <div class="chip" data-style="comic" onclick="pickStyle(this)">💥 Comic</div>
-            <div class="chip" data-style="noir" onclick="pickStyle(this)">🌑 Noir</div>
-            <div class="chip" data-style="cyberpunk" onclick="pickStyle(this)">🌆 Cyberpunk</div>
-            <div class="chip" data-style="ukiyo_e" onclick="pickStyle(this)">🎌 Ukiyo-e</div>
-            <div class="chip" data-style="impressionist" onclick="pickStyle(this)">🌸 Impressionist</div>
-            <div class="chip" data-style="watercolor" onclick="pickStyle(this)">🎨 Watercolor</div>
-            <div class="chip" data-style="oil_painting" onclick="pickStyle(this)">🖼️ Oil Paint</div>
-            <div class="chip" data-style="vintage_film" onclick="pickStyle(this)">📼 Vintage</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ COMPOSE ═══ -->
-      <div class="panel" id="p-compose">
-        <div class="form-group">
-          <label>Reference Images (2-8)</label>
-          <div class="upload" id="u-compose" onclick="$f('f-compose').click()">
-            <div class="up-icon">🖼️</div><div class="up-text">Upload 2-8 images</div>
-            <input type="file" id="f-compose" accept="image/*" multiple onchange="onMultiUpload(this,'u-compose')">
-          </div>
-          <div id="compose-list" style="font-size:11px;color:var(--tx3);margin-top:6px"></div>
-        </div>
-        <div class="form-group"><label>Prompt (use @Image 1, @Image 2...)</label>
-          <textarea id="compose-prompt" placeholder="The woman (@Image 1) wearing the red dress (@Image 2) walks through the garden (@Image 3), turning to smile at the camera..."></textarea>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- GENERATE BTN -->
-    <div class="gen-btn">
-      <button class="btn-gen" id="generateBtn" onclick="generate()">🎬 Generate</button>
     </div>
   </div>
-
-  <!-- MAIN OUTPUT -->
-  <div class="main-area">
-    <div class="output">
-      <div class="placeholder" id="ph">
-        <div class="ph-icon">🎬</div>
-        <h3>Ready to create</h3>
-        <p style="color:var(--tx3);font-size:13px">Upload an image, write a prompt, and hit Generate</p>
-      </div>
-      <div class="video-box" id="videoBox" style="display:none">
-        <video id="vid" controls loop autoplay></video>
-      </div>
-      <div class="video-actions" id="videoActions" style="display:none">
-        <a class="vid-btn" id="dlLink" download>⬇️ Download MP4</a>
-        <button class="vid-btn" onclick="exportAs('gif')">🎞️ Export GIF</button>
-        <button class="vid-btn" onclick="exportAs('webm')">🌐 Export WebM</button>
-        <button class="vid-btn" onclick="exportAs('storyboard')">📋 Storyboard</button>
-        <button class="vid-btn" onclick="exportAs('9:16')">📱 Vertical 9:16</button>
-      </div>
-      <div class="status" id="statusBar"><div class="spinner"></div><span id="statusText"></span></div>
-    </div>
-  </div>
-</div>
+</main>
 
 <script>
-const API=window.location.origin;
-const $=id=>document.getElementById(id);
-const $f=id=>document.getElementById(id);
-let currentMode='animate';
-let currentStyle='ghibli';
-let currentJobId=null;
+// ══════════════════════════════════ STATE ══════════════════════════════════
+let activeMode='animate';
+let jobs=[];
 
-// ═══ MODE SWITCHING ═══
-function setMode(mode){
-  currentMode=mode;
-  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===mode));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  $('p-'+mode).classList.add('active');
-  // Update button text
-  const labels={animate:'🎬 Generate Animation',story:'📖 Generate Story',tryon:'👗 Try It On',style:'🎭 Generate Styled Video',compose:'🎨 Create Composition'};
-  $('generateBtn').textContent=labels[mode]||'🎬 Generate';
-}
+// ══════════════════════════════════ STYLES ══════════════════════════════════
+const STYLES=[
+  {id:'cinematic',label:'🎬 Cinematic'},{id:'photorealistic',label:'📸 Photorealistic'},
+  {id:'anime',label:'🎌 Anime'},{id:'artistic',label:'🎨 Artistic'},
+  {id:'documentary',label:'🎥 Documentary'},{id:'dreamy',label:'💫 Dreamy'},
+  {id:'warm',label:'☀️ Warm'},{id:'ghibli',label:'🏯 Ghibli'},
+  {id:'pixar',label:'🧊 Pixar'},{id:'comic',label:'💥 Comic'},
+  {id:'noir',label:'🌑 Noir'},{id:'cyberpunk',label:'🌆 Cyberpunk'},
+];
 
-// Handle URL hash
-if(location.hash){const m=location.hash.slice(1);if(['animate','story','tryon','style','compose'].includes(m))setMode(m)}
+// Populate all style selects
+document.querySelectorAll('select[id^="style-"]').forEach(s=>{
+  STYLES.forEach(st=>{const o=document.createElement('option');o.value=st.id;o.textContent=st.label;s.appendChild(o)});
+  s.value='cinematic';
+});
 
-// ═══ UPLOAD ═══
-function onUpload(input,zoneId){
-  const f=input.files[0];if(!f)return;
-  const z=$(zoneId),r=new FileReader();
-  r.onload=e=>{z.innerHTML=`<img src="${e.target.result}">`;z.classList.add('has-img')};
-  r.readAsDataURL(f);
-}
-function onMultiUpload(input,zoneId){
-  const fs=input.files;if(!fs.length)return;
-  $('compose-list').innerHTML=Array.from(fs).map((f,i)=>`📎 @Image ${i+1}: ${f.name}`).join('<br>');
-  $(zoneId).innerHTML=`<div style="padding:20px"><div class="up-icon">✅</div><div class="up-text">${fs.length} images selected</div></div>`;
-  $(zoneId).classList.add('has-img');
-}
+// ══════════════════════════════════ MODE TABS ═══════════════════════════════
+document.querySelectorAll('.mode-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    activeMode=tab.dataset.mode;
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('panel-'+activeMode).classList.add('active');
+  });
+});
 
-// ═══ STYLE CHIPS ═══
-function pickStyle(el){
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  currentStyle=el.dataset.style;
-}
-
-// ═══ TEMPLATES ═══
-let templates=[];
-async function loadTemplates(){
-  try{
-    const r=await fetch(`${API}/api/v1/templates`);
-    const d=await r.json();
-    templates=d.templates||[];
-    const sel=$('animate-tpl');
-    templates.forEach(t=>{
-      const o=document.createElement('option');
-      o.value=t.id;o.textContent=`[${t.category}] ${t.name}`;
-      sel.appendChild(o);
-    });
-  }catch(e){}
-}
-function applyTemplate(tplId,targetId){
-  const t=templates.find(x=>x.id===tplId);
-  if(t)$(targetId).value=t.example.replace(/\.\.\.$/,'');
-}
-loadTemplates();
-
-// ═══ STATUS ═══
-function showStatus(type,text){
-  const b=$('statusBar');b.className=`status show ${type}`;
-  $('statusText').textContent=text;
-}
-function showVideo(url){
-  $('ph').style.display='none';
-  $('videoBox').style.display='block';
-  $('videoActions').style.display='flex';
-  const v=$('vid');v.src=url;v.load();
-  $('dlLink').href=url;
+// ══════════════════════════════════ FILE UPLOADS ═════════════════════════════
+function setupUpload(zoneId,fileId,previewId){
+  const zone=document.getElementById(zoneId);
+  const file=document.getElementById(fileId);
+  if(!zone||!file)return;
+  zone.addEventListener('dragover',e=>{e.preventDefault();zone.style.borderColor='var(--purple)'});
+  zone.addEventListener('dragleave',()=>{zone.style.borderColor=''});
+  zone.addEventListener('drop',e=>{
+    e.preventDefault();zone.style.borderColor='';file.files=e.dataTransfer.files;
+    showPreview(file,previewId);zone.classList.add('has-file');
+  });
+  file.addEventListener('change',()=>{showPreview(file,previewId);if(file.files.length)zone.classList.add('has-file')});
 }
 
-// ═══ GENERATE ═══
-async function generate(){
-  const btn=$('generateBtn');btn.disabled=true;
-  showStatus('proc','⏳ Submitting...');
-  try{
-    let fd=new FormData(),endpoint='';
-    switch(currentMode){
-      case'animate':
-        endpoint='/api/v1/animate';
-        fd.append('image',$f('f-animate').files[0]);
-        fd.append('prompt',$('animate-prompt').value);
-        fd.append('style',$('animate-style').value);
-        fd.append('preset',$('animate-preset').value);
-        break;
-      case'story':
-        endpoint='/api/v1/story';
-        fd.append('image',$f('f-story').files[0]);
-        fd.append('story',$('story-text').value);
-        fd.append('style',$('story-style').value);
-        fd.append('max_scenes',$('story-scenes').value);
-        break;
-      case'tryon':
-        endpoint='/api/v1/tryon';
-        fd.append('person_image',$f('f-tryon-p').files[0]);
-        fd.append('garment_image',$f('f-tryon-g').files[0]);
-        fd.append('prompt',$('tryon-prompt').value);
-        fd.append('category',$('tryon-cat').value);
-        fd.append('action',$('tryon-action').value);
-        break;
-      case'style':
-        endpoint='/api/v1/style';
-        fd.append('image',$f('f-style').files[0]);
-        fd.append('prompt',$('style-prompt').value);
-        fd.append('style',currentStyle);
-        break;
-      case'compose':
-        endpoint='/api/v1/compose';
-        for(const file of $f('f-compose').files)fd.append('images',file);
-        fd.append('prompt',$('compose-prompt').value);
-        break;
+function showPreview(input,previewId){
+  const preview=document.getElementById(previewId);
+  if(!preview||!input.files[0])return;
+  const reader=new FileReader();
+  reader.onload=e=>{preview.src=e.target.result;preview.style.display='block'};
+  reader.readAsDataURL(input.files[0]);
+}
+
+// Setup all uploads
+['animate','story','style','realtime'].forEach(m=>setupUpload('upload-'+m,'file-'+m,'preview-'+m));
+setupUpload('upload-person','file-person','preview-person');
+setupUpload('upload-garment','file-garment','preview-garment');
+for(let i=0;i<2;i++) setupUpload('upload-compose-'+i,'file-compose-'+i,'preview-compose-'+i);
+
+// ══════════════════════════════════ STYLE PRESETS ════════════════════════════
+document.querySelectorAll('.style-chip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chip.parentElement.querySelectorAll('.style-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+
+// ══════════════════════════════════ COMPOSE SLOTS ════════════════════════════
+let composeCount=2;
+function addComposeSlot(){
+  if(composeCount>=8)return;
+  const container=document.getElementById('compose-uploads');
+  const div=document.createElement('div');
+  div.className='upload-zone';
+  div.id='upload-compose-'+composeCount;
+  div.innerHTML=`<span class="icon">📷</span><div class="text">Drop image ${composeCount+1} here (@Image ${composeCount+1})</div><img id="preview-compose-${composeCount}" style="display:none"><input type="file" accept="image/jpeg,image/png,image/webp" id="file-compose-${composeCount}">`;
+  container.appendChild(div);
+  setupUpload('upload-compose-'+composeCount,'file-compose-'+composeCount,'preview-compose-'+composeCount);
+  composeCount++;
+}
+
+// ══════════════════════════════════ SUBMIT JOB ═══════════════════════════════
+async function submitJob(mode){
+  const form=new FormData();
+  let endpoint='';
+  
+  if(mode==='animate'){
+    const f=document.getElementById('file-animate');
+    if(!f.files[0])return alert('Please select an image');
+    form.append('image',f.files[0]);
+    form.append('prompt',document.getElementById('prompt-animate').value||'A person walking naturally');
+    form.append('style',document.getElementById('style-animate').value);
+    form.append('preset',document.getElementById('preset-animate').value);
+    form.append('num_frames',document.getElementById('frames-animate').value);
+    form.append('num_inference_steps',document.getElementById('steps-animate').value);
+    endpoint='/api/v1/animate';
+  }else if(mode==='story'){
+    const f=document.getElementById('file-story');
+    if(!f.files[0])return alert('Please select an image');
+    form.append('image',f.files[0]);
+    form.append('story',document.getElementById('story-text').value||'A story');
+    form.append('style',document.getElementById('style-story').value);
+    form.append('preset',document.getElementById('preset-story').value);
+    form.append('max_scenes',document.getElementById('max-scenes').value);
+    form.append('transition',document.getElementById('transition').value);
+    endpoint='/api/v1/story';
+  }else if(mode==='tryon'){
+    const p=document.getElementById('file-person');
+    const g=document.getElementById('file-garment');
+    if(!p.files[0]||!g.files[0])return alert('Please select both person and garment images');
+    form.append('person_image',p.files[0]);
+    form.append('garment_image',g.files[0]);
+    form.append('category',document.getElementById('tryon-category').value);
+    form.append('style',document.getElementById('style-tryon').value);
+    form.append('preset',document.getElementById('preset-tryon').value);
+    endpoint='/api/v1/tryon';
+  }else if(mode==='compose'){
+    const imgs=[];
+    for(let i=0;i<composeCount;i++){
+      const f=document.getElementById('file-compose-'+i);
+      if(f&&f.files[0]){form.append('images',f.files[0]);imgs.push(i+1)}
     }
-    const res=await fetch(API+endpoint,{method:'POST',body:fd});
-    const data=await res.json();
-    if(!res.ok)throw new Error(data.detail||'Request failed');
-    currentJobId=data.job_id;
-    pollJob(data.job_id);
-  }catch(e){
-    showStatus('fail','❌ '+e.message);btn.disabled=false;
+    if(imgs.length<2)return alert('Please select at least 2 images');
+    form.append('prompt',document.getElementById('prompt-compose').value||'Combine the reference images');
+    form.append('style',document.getElementById('style-compose').value);
+    form.append('num_frames',document.getElementById('frames-compose').value);
+    endpoint='/api/v1/compose';
+  }else if(mode==='style'){
+    const f=document.getElementById('file-style');
+    if(!f.files[0])return alert('Please select an image');
+    form.append('image',f.files[0]);
+    form.append('prompt',document.getElementById('prompt-style').value||'A beautiful scene');
+    const activeChip=document.querySelector('#stylePresets .style-chip.active');
+    form.append('style',activeChip?activeChip.dataset.style:'cinematic');
+    endpoint='/api/v1/style';
+  }else if(mode==='realtime'){
+    const f=document.getElementById('file-realtime');
+    if(!f.files[0])return alert('Please select an image');
+    form.append('image',f.files[0]);
+    form.append('prompt',document.getElementById('prompt-realtime').value||'A person walking');
+    endpoint='/api/v1/realtime/generate';
   }
-}
 
-async function pollJob(jobId){
-  for(let i=0;i<300;i++){
-    await new Promise(r=>setTimeout(r,2000));
-    try{
-      const r=await fetch(`${API}/api/v1/jobs/${jobId}`);
-      const d=await r.json();
-      if(d.status==='completed'){
-        showStatus('done',`✅ Done in ${(d.generation_time||0).toFixed(1)}s`);
-        showVideo(`${API}/api/v1/jobs/${jobId}/video`);
-        $('generateBtn').disabled=false;return;
-      }
-      if(d.status==='failed'){
-        showStatus('fail',`❌ ${d.error||'Failed'}`);
-        $('generateBtn').disabled=false;return;
-      }
-      const scenes=d.scenes_completed!==undefined?` (${d.scenes_completed}/${d.scenes_total} scenes)`:'';
-      showStatus('proc',`⏳ Processing${scenes}... (${i*2}s)`);
-    }catch(e){}
-  }
-  showStatus('fail','❌ Timeout');$('generateBtn').disabled=false;
-}
-
-// ═══ EXPORT ═══
-async function exportAs(fmt){
-  if(!currentJobId)return;
   try{
-    const fd=new FormData();fd.append('format',fmt);
-    const r=await fetch(`${API}/api/v1/export/${currentJobId}`,{method:'POST',body:fd});
-    if(!r.ok){const e=await r.json();alert(e.detail||'Export failed');return}
-    const blob=await r.blob();
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download=`fitstream_${currentJobId}.${fmt==='storyboard'?'jpg':fmt.includes(':')?'mp4':fmt}`;
-    a.click();URL.revokeObjectURL(url);
-  }catch(e){alert('Export failed: '+e.message)}
+    const btn=document.querySelector('#panel-'+mode+' .btn-primary,#panel-'+mode+' .btn-emerald');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Generating...'}
+
+    const r=await fetch(endpoint,{method:'POST',body:form});
+    const d=await r.json();
+    if(d.job_id){
+      jobs.unshift({id:d.job_id,type:mode,status:'queued',prompt:(form.get('prompt')||form.get('story')||'').substring(0,80),video:null});
+      renderJobs();
+      pollJob(d.job_id);
+    }else{
+      alert('Error: '+JSON.stringify(d));
+    }
+    if(btn){btn.disabled=false;btn.textContent=btn.dataset.orig||'Generate'}
+  }catch(e){
+    alert('Failed: '+e.message);
+    const btn=document.querySelector('#panel-'+mode+' .btn-primary,#panel-'+mode+' .btn-emerald');
+    if(btn){btn.disabled=false}
+  }
 }
 
-// ═══ GPU ═══
-async function checkGPU(){
-  try{const r=await fetch(API+'/health');const d=await r.json();const b=$('gpuBadge');
-    if(d.gpu?.available){b.textContent=`🟢 ${d.gpu.gpu_name} (${d.gpu.free_gb.toFixed(0)}GB free)`;b.classList.add('online')}
-    else b.textContent='🔴 No GPU';
-  }catch(e){$('gpuBadge').textContent='⚪ Offline'}
+// ══════════════════════════════════ JOB POLLING ══════════════════════════════
+async function pollJob(jobId){
+  const check=async ()=>{
+    try{
+      const r=await fetch('/api/v1/jobs/'+jobId);
+      const d=await r.json();
+      const job=jobs.find(j=>j.id===jobId);
+      if(job){
+        job.status=d.status||'unknown';
+        job.progress=d.progress||0;
+        if(d.status==='completed') job.video='/api/v1/jobs/'+jobId+'/video';
+        if(d.error) job.error=d.error;
+        renderJobs();
+      }
+      if(d.status==='completed'||d.status==='failed') return;
+      setTimeout(check,2000);
+    }catch(e){setTimeout(check,3000)}
+  };
+  check();
 }
-checkGPU();setInterval(checkGPU,30000);
+
+// ══════════════════════════════════ RENDER ══════════════════════════════════
+function renderJobs(){
+  const container=document.getElementById('jobList');
+  if(jobs.length===0){
+    container.innerHTML='<div class="empty-state"><span class="icon">📋</span><div class="text">No jobs yet</div></div>';
+  }else{
+    container.innerHTML=jobs.map(j=>{
+      const statusClass=j.status==='completed'?'done':j.status==='failed'?'fail':j.status==='processing'?'proc':'';
+      const statusIcon=j.status==='completed'?'✅':j.status==='failed'?'❌':j.status==='processing'?'🔄':'⏳';
+      const badgeClass=j.status==='completed'?'badge-emerald':j.status==='failed'?'badge-red':j.status==='processing'?'badge-amber':'';
+      const progress=j.progress||0;
+      const progressClass=j.status==='completed'?'done':j.status==='failed'?'fail':'proc';
+      const videoHtml=j.video?`<video src="${j.video}" controls style="width:100%;border-radius:8px;margin-top:8px"></video>`:'';
+      return `<div class="job-item animate-in">
+        <div class="job-header">
+          <span class="job-type" style="color:var(--text2)">${statusIcon} ${j.type}</span>
+          <span class="badge ${badgeClass}">${j.status}</span>
+        </div>
+        <div class="job-prompt">${j.prompt||''}</div>
+        ${j.error?`<div style="font-size:11px;color:var(--red);margin-top:4px">${j.error}</div>`:''}
+        <div class="progress-bar"><div class="progress-fill ${progressClass}" style="width:${Math.round(progress*100)}%"></div></div>
+        ${videoHtml}
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">ID: ${j.id}</div>
+      </div>`;
+    }).join('');
+  }
+  // Update stats
+  document.getElementById('statTotal').textContent=jobs.length;
+  document.getElementById('statDone').textContent=jobs.filter(j=>j.status==='completed').length;
+  document.getElementById('statFailed').textContent=jobs.filter(j=>j.status==='failed').length;
+}
+
+// ══════════════════════════════════ STORE BTN TEXT ═══════════════════════════
+document.querySelectorAll('.btn-primary,.btn-emerald').forEach(b=>b.dataset.orig=b.textContent);
 </script>
 </body>
 </html>

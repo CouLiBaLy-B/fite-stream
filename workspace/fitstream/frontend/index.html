@@ -5,296 +5,318 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FitStream — AI Video Animation Platform</title>
 <style>
-/* ═══════ RESET & VARIABLES ═══════ */
-*{margin:0;padding:0;box-sizing:border-box}
+/* ═══════════════════════════════════════════ DESIGN SYSTEM ═══════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#07070e;--glass:rgba(255,255,255,.04);--glass2:rgba(255,255,255,.07);
-  --glass-border:rgba(255,255,255,.08);--glass-hover:rgba(255,255,255,.12);
-  --pr:#8b5cf6;--pr2:#a78bfa;--pr-glow:rgba(139,92,246,.25);
-  --ac:#06d6a0;--ac2:#34d399;
-  --pink:#ec4899;--blue:#3b82f6;--orange:#f59e0b;--red:#ef4444;
-  --tx:#f1f5f9;--tx2:#94a3b8;--tx3:#64748b;
-  --r:16px;--r2:24px;
-  --blur:blur(20px);--blur2:blur(40px);
-  --shadow:0 8px 32px rgba(0,0,0,.4);
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --bg:#050510;--bg2:#0a0a1a;
+  --glass:rgba(255,255,255,.03);--glass2:rgba(255,255,255,.06);--glass3:rgba(255,255,255,.10);
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --text:#f0f0f8;--text2:#8890ae;--text3:#555a78;
+  --purple:#8b5cf6;--purple2:#a78bfa;--purple-glow:rgba(139,92,246,.28);
+  --emerald:#06d6a0;--emerald2:#34d399;
+  --pink:#ec4899;--blue:#3b82f6;--amber:#f59e0b;--red:#ef4444;
+  --radius:14px;--radius-lg:20px;--radius-xl:28px;
+  --blur:blur(24px);--blur-lite:blur(12px);
+  --shadow:0 4px 32px rgba(0,0,0,.5);--shadow-lg:0 8px 64px rgba(0,0,0,.6);
+  --transition:.28s cubic-bezier(.4,0,.2,1);
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"SF Mono","Fira Code","Cascadia Code",Consolas,monospace;
 }
 html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%,rgba(139,92,246,.08),transparent),
+    radial-gradient(ellipse 60% 50% at 90% 80%,rgba(236,72,153,.06),transparent),
+    radial-gradient(ellipse 50% 50% at 10% 60%,rgba(6,214,160,.05),transparent);
+}
 
-/* ═══════ GLASS CARD ═══════ */
+/* ═══════════════════════ COMPONENTS ═══════════════════════ */
 .glass{
   background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
-  border:1px solid var(--glass-border);border-radius:var(--r2);
-  box-shadow:var(--shadow);transition:all .3s ease;
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow);transition:all var(--transition);
 }
-.glass:hover{background:var(--glass-hover);border-color:rgba(255,255,255,.14);transform:translateY(-2px)}
+.glass:hover{border-color:var(--border2);box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.glass-accent{border-left:3px solid var(--purple)}
 
-/* ═══════ BG EFFECTS ═══════ */
-.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.orb{position:absolute;border-radius:50%;filter:var(--blur2);opacity:.35;animation:float 20s infinite ease-in-out}
-.orb-1{width:600px;height:600px;background:radial-gradient(circle,var(--pr) 0%,transparent 70%);top:-10%;left:-5%;animation-delay:0s}
-.orb-2{width:500px;height:500px;background:radial-gradient(circle,var(--pink) 0%,transparent 70%);bottom:-10%;right:-5%;animation-delay:-7s}
-.orb-3{width:400px;height:400px;background:radial-gradient(circle,var(--blue) 0%,transparent 70%);top:40%;left:60%;animation-delay:-14s}
-@keyframes float{
-  0%,100%{transform:translate(0,0) scale(1)}
-  33%{transform:translate(30px,-40px) scale(1.05)}
-  66%{transform:translate(-20px,30px) scale(.95)}
-}
+.card{padding:28px}
+.card-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.card-icon{font-size:28px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);background:var(--glass2)}
+.card-title{font-size:18px;font-weight:700}
+.card-subtitle{font-size:13px;color:var(--text2);margin-top:2px}
 
-/* ═══════ NAV ═══════ */
-nav{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
-  background:rgba(7,7,14,.7);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
-  border-bottom:1px solid var(--glass-border);
-}
-.nav-logo{font-size:20px;font-weight:800;letter-spacing:-.5px}
-.nav-logo span{background:linear-gradient(135deg,var(--pr),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav-links{display:flex;gap:6px}
-.nav-links a{
-  color:var(--tx2);text-decoration:none;font-size:13px;font-weight:600;
-  padding:8px 16px;border-radius:10px;transition:all .2s;
-}
-.nav-links a:hover,.nav-links a.active{color:var(--tx);background:var(--glass2)}
-.nav-gpu{font-size:11px;padding:6px 14px;border-radius:20px;background:var(--glass);border:1px solid var(--glass-border);color:var(--tx3)}
-.nav-gpu.online{color:var(--ac);border-color:rgba(6,214,160,.3)}
-
-/* ═══════ HERO ═══════ */
-.hero{
-  position:relative;z-index:1;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:100vh;padding:120px 24px 80px;text-align:center;
-}
-.hero h1{
-  font-size:clamp(40px,7vw,80px);font-weight:900;letter-spacing:-2px;line-height:1.05;
-  max-width:800px;margin-bottom:20px;
-}
-.hero h1 .gr{background:linear-gradient(135deg,var(--pr2),var(--pink),var(--ac));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero p{font-size:clamp(16px,2vw,20px);color:var(--tx2);max-width:600px;line-height:1.7;margin-bottom:40px}
-
-.hero-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .btn{
-  padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700;text-decoration:none;
+  padding:12px 24px;border-radius:var(--radius);font-size:14px;font-weight:600;
   cursor:pointer;border:none;display:inline-flex;align-items:center;gap:8px;
-  transition:all .25s ease;letter-spacing:.3px;
+  transition:all var(--transition);text-decoration:none;font-family:var(--font);
+  letter-spacing:.2px;white-space:nowrap;
 }
-.btn-primary{
-  background:linear-gradient(135deg,var(--pr),#7c3aed);color:#fff;
-  box-shadow:0 4px 24px var(--pr-glow);
-}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--pr-glow);filter:brightness(1.1)}
-.btn-secondary{background:var(--glass);color:var(--tx);border:1px solid var(--glass-border)}
-.btn-secondary:hover{background:var(--glass-hover)}
+.btn-primary{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;box-shadow:0 4px 20px var(--purple-glow)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--purple-glow);filter:brightness(1.12)}
+.btn-secondary{background:var(--glass2);color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover{background:var(--glass3)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid transparent}
+.btn-ghost:hover{color:var(--text);background:var(--glass2)}
+.btn-sm{padding:8px 16px;font-size:12px;border-radius:10px}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.btn-danger:hover{background:rgba(239,68,68,.25)}
+.btn-emerald{background:rgba(6,214,160,.12);color:var(--emerald);border:1px solid rgba(6,214,160,.25)}
+.btn-emerald:hover{background:rgba(6,214,160,.2)}
 
-/* ═══════ FEATURES GRID ═══════ */
-.section{position:relative;z-index:1;padding:80px 24px;max-width:1200px;margin:0 auto}
-.section-title{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;letter-spacing:-1px}
-.section-sub{color:var(--tx2);font-size:16px;margin-bottom:48px;max-width:600px}
-
-.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
-.feature-card{padding:28px;cursor:pointer;text-decoration:none;color:inherit}
-.feature-card .icon{font-size:36px;margin-bottom:16px;display:block}
-.feature-card h3{font-size:18px;font-weight:700;margin-bottom:8px}
-.feature-card p{font-size:14px;color:var(--tx2);line-height:1.6}
-.feature-card .badge{
-  display:inline-block;margin-top:12px;font-size:11px;font-weight:700;
-  padding:4px 10px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px;
+.badge{
+  display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+  padding:4px 10px;border-radius:8px;text-transform:uppercase;letter-spacing:.6px;
 }
-.badge-gen{background:rgba(139,92,246,.15);color:var(--pr2)}
-.badge-tool{background:rgba(6,214,160,.15);color:var(--ac)}
-.badge-infra{background:rgba(59,130,246,.15);color:var(--blue)}
-.badge-new{background:rgba(236,72,153,.15);color:var(--pink)}
+.badge-purple{background:rgba(139,92,246,.15);color:var(--purple2)}
+.badge-emerald{background:rgba(6,214,160,.15);color:var(--emerald)}
+.badge-pink{background:rgba(236,72,153,.15);color:var(--pink)}
+.badge-blue{background:rgba(59,130,246,.15);color:var(--blue)}
+.badge-amber{background:rgba(245,158,11,.15);color:var(--amber)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
 
-/* ═══════ STATS BAR ═══════ */
-.stats-bar{
-  display:flex;justify-content:center;gap:48px;flex-wrap:wrap;
-  padding:48px 24px;position:relative;z-index:1;
-}
-.stat{text-align:center}
-.stat .num{font-size:36px;font-weight:900;background:linear-gradient(135deg,var(--pr2),var(--ac));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.stat .label{font-size:12px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
-
-/* ═══════ CTA ═══════ */
-.cta{
-  text-align:center;padding:80px 24px;position:relative;z-index:1;
-}
-.cta h2{font-size:32px;font-weight:800;margin-bottom:12px}
-.cta p{color:var(--tx2);margin-bottom:32px}
-.cta code{
-  display:block;max-width:600px;margin:0 auto 32px;
-  background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;
-  padding:16px 20px;font-family:'SF Mono',Consolas,monospace;font-size:13px;
-  color:var(--ac);text-align:left;white-space:pre;overflow-x:auto;
+.tag{
+  display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;
+  padding:3px 10px;border-radius:20px;background:var(--glass2);color:var(--text2);
+  border:1px solid var(--border);
 }
 
-/* ═══════ FOOTER ═══════ */
-footer{
-  position:relative;z-index:1;text-align:center;padding:40px 24px;
-  border-top:1px solid var(--glass-border);color:var(--tx3);font-size:13px;
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;padding:5px 12px;border-radius:20px;
+  background:var(--glass);border:1px solid var(--border);
+  color:var(--text2);
 }
-footer a{color:var(--pr2);text-decoration:none}
+.pill-dot{width:6px;height:6px;border-radius:50%}
+.pill-online .pill-dot,.pill-dot.on{background:var(--emerald);box-shadow:0 0 8px rgba(6,214,160,.4)}
+.pill-offline .pill-dot,.pill-dot.off{background:var(--text3)}
+.pill-processing .pill-dot,.pill-dot.proc{background:var(--amber);animation:pulse 1.5s ease infinite}
 
-/* ═══════ RESPONSIVE ═══════ */
-@media(max-width:640px){
-  nav{padding:10px 16px}
-  .nav-links{display:none}
-  .hero{padding:100px 20px 60px}
-  .stats-bar{gap:24px}
-  .stat .num{font-size:28px}
+input,textarea,select{
+  width:100%;padding:12px 16px;border-radius:var(--radius);font-size:14px;font-family:var(--font);
+  background:var(--glass2);border:1px solid var(--border);color:var(--text);
+  transition:all var(--transition);outline:none;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(139,92,246,.12)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+textarea{resize:vertical;min-height:80px}
+
+label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px}
+
+.input-group{display:flex;gap:12px}
+.input-group input,.input-group select{width:auto;flex:1}
+
+/* ════════════════════════════════ LAYOUT ════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  padding:10px 24px;display:flex;align-items:center;justify-content:space-between;
+  background:rgba(5,5,16,.75);backdrop-filter:var(--blur);
+  -webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--border);
+}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;letter-spacing:-.5px;text-decoration:none;color:var(--text)}
+.nav-brand .gradient{background:linear-gradient(135deg,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{
+  color:var(--text2);text-decoration:none;font-size:13px;font-weight:600;
+  padding:8px 16px;border-radius:10px;transition:all var(--transition);
+}
+.nav-tab:hover,.nav-tab.active{color:var(--text);background:var(--glass2)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-status{font-size:11px;padding:6px 14px;border-radius:20px;background:var(--glass);border:1px solid var(--border);color:var(--text3)}
+.nav-status.online{color:var(--emerald);border-color:rgba(6,214,160,.25)}
+
+main{padding-top:72px}
+.container{max-width:1320px;margin:0 auto;padding:0 24px}
+.grid{display:grid;gap:20px}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+
+.section{padding:60px 0}
+.section-hero{padding:100px 0 60px;text-align:center}
+.hero-title{font-size:clamp(36px,6vw,72px);font-weight:900;letter-spacing:-1.5px;line-height:1.08;max-width:900px;margin:0 auto 16px}
+.hero-title .gr{background:linear-gradient(135deg,var(--purple2),var(--pink),var(--emerald));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-desc{font-size:clamp(15px,2vw,18px);color:var(--text2);max-width:580px;margin:0 auto 36px;line-height:1.7}
+
+.section-title{font-size:clamp(24px,3vw,36px);font-weight:800;margin-bottom:8px;letter-spacing:-.5px}
+.section-desc{color:var(--text2);font-size:15px;margin-bottom:40px;max-width:600px}
+
+/* ════════════════════════════════ STATS ════════════════════════════════ */
+.stats-row{display:flex;justify-content:center;gap:40px;flex-wrap:wrap;padding:40px 0}
+.stat{text-align:center;min-width:100px}
+.stat-value{font-size:38px;font-weight:900;background:linear-gradient(135deg,var(--purple2),var(--emerald));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-top:4px}
+
+/* ════════════════════════════════ FEATURE CARDS ═══════════════════════ */
+.feature-icon{font-size:40px;margin-bottom:16px;display:block;filter:drop-shadow(0 4px 12px rgba(139,92,246,.3))}
+.feature-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.feature-desc{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* ════════════════════════════════ CODE BLOCK ═══════════════════════ */
+.code-block{
+  display:block;max-width:700px;margin:0 auto 28px;text-align:left;
+  background:#0a0a1a;border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:18px 22px;font-family:var(--mono);font-size:13px;color:var(--emerald);
+  white-space:pre;overflow-x:auto;line-height:1.7;
+}
+
+/* ════════════════════════════════ FOOTER ═══════════════════════════ */
+footer{text-align:center;padding:36px 24px;border-top:1px solid var(--border);color:var(--text3);font-size:12px}
+footer a{color:var(--purple2);text-decoration:none}
+
+/* ════════════════════════════════ ANIMATIONS ═══════════════════════ */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.animate-in{animation:slideUp .5s ease forwards}
+.delay-1{animation-delay:.1s;opacity:0}
+.delay-2{animation-delay:.2s;opacity:0}
+.delay-3{animation-delay:.3s;opacity:0}
+.delay-4{animation-delay:.4s;opacity:0}
+
+.skeleton{
+  background:linear-gradient(90deg,var(--glass2) 25%,var(--glass3) 50%,var(--glass2) 75%);
+  background-size:200% 100%;animation:shimmer 2s ease infinite;border-radius:var(--radius);
+}
+
+/* ════════════════════════════════ RESPONSIVE ═══════════════════════ */
+@media(max-width:768px){
+  nav{padding:8px 14px}
+  .nav-tabs{display:none}
+  .hero-title{font-size:32px}
+  .stats-row{gap:20px}
+  .stat-value{font-size:28px}
+  .container{padding:0 16px}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
-<!-- BG ORBS -->
-<div class="bg-orbs">
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
-</div>
-
-<!-- NAV -->
 <nav>
-  <div class="nav-logo">🎬 <span>FitStream</span></div>
-  <div class="nav-links">
-    <a href="index.html" class="active">Home</a>
-    <a href="create.html">Create</a>
-    <a href="gallery.html">Gallery</a>
-    <a href="monitor.html">Monitor</a>
+  <a href="index.html" class="nav-brand">🎬 <span class="gradient">FitStream</span></a>
+  <div class="nav-tabs">
+    <a href="index.html" class="nav-tab active">Home</a>
+    <a href="create.html" class="nav-tab">Create</a>
+    <a href="gallery.html" class="nav-tab">Gallery</a>
+    <a href="monitor.html" class="nav-tab">Monitor</a>
   </div>
-  <div class="nav-gpu" id="gpuBadge">⚪ Checking GPU...</div>
+  <div class="nav-right">
+    <span class="nav-status" id="gpuStatus">⚪ API</span>
+  </div>
 </nav>
 
-<!-- HERO -->
-<section class="hero">
-  <h1>Turn Photos Into <span class="gr">Living Stories</span></h1>
-  <p>Upload a photo of anyone. Write a prompt. Get a fluid AI-generated animation — try-on outfits, tell stories, explore styles. Powered by Wan VACE & LoomVideo.</p>
-  <div class="hero-actions">
-    <a href="create.html" class="btn btn-primary">🎬 Start Creating</a>
-    <a href="gallery.html" class="btn btn-secondary">🖼️ View Gallery</a>
+<main>
+  <section class="section-hero">
+    <h1 class="hero-title animate-in delay-1">Turn Photos Into <span class="gr">Living Stories</span></h1>
+    <p class="hero-desc animate-in delay-2">Upload a photo of anyone. Write a prompt. Get fluid AI-generated animations — virtual try-on, storytelling, style transfer. Powered by state-of-the-art video diffusion models.</p>
+    <div class="animate-in delay-3" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="create.html" class="btn btn-primary">🎬 Open Creator Studio</a>
+      <a href="gallery.html" class="btn btn-secondary">🖼️ Browse Gallery</a>
+    </div>
+  </section>
+
+  <div class="stats-row animate-in delay-4">
+    <div class="stat"><div class="stat-value">6</div><div class="stat-label">AI Pipelines</div></div>
+    <div class="stat"><div class="stat-value">10</div><div class="stat-label">Art Styles</div></div>
+    <div class="stat"><div class="stat-value">35+</div><div class="stat-label">API Endpoints</div></div>
+    <div class="stat"><div class="stat-value">25+</div><div class="stat-label">Templates</div></div>
+    <div class="stat"><div class="stat-value">8</div><div class="stat-label">Languages</div></div>
+    <div class="stat"><div class="stat-value">572</div><div class="stat-label">Tests</div></div>
   </div>
-</section>
 
-<!-- STATS -->
-<div class="stats-bar">
-  <div class="stat"><div class="num">6</div><div class="label">AI Pipelines</div></div>
-  <div class="stat"><div class="num">10</div><div class="label">Art Styles</div></div>
-  <div class="stat"><div class="num">25+</div><div class="label">Templates</div></div>
-  <div class="stat"><div class="num">36</div><div class="label">API Endpoints</div></div>
-  <div class="stat"><div class="num">8</div><div class="label">Languages</div></div>
-  <div class="stat"><div class="num">234</div><div class="label">Tests Passing</div></div>
-</div>
-
-<!-- FEATURES -->
-<section class="section">
-  <h2 class="section-title">Everything You Need</h2>
-  <p class="section-sub">Six AI pipelines, ten artistic styles, and a full production-ready infrastructure.</p>
-
-  <div class="features-grid">
-    <a href="create.html#animate" class="feature-card glass">
-      <span class="icon">📸</span>
-      <h3>Animate</h3>
-      <p>Upload a person photo + write a prompt → get a fluid animated video in seconds.</p>
-      <span class="badge badge-gen">Pipeline</span>
-    </a>
-    <a href="create.html#story" class="feature-card glass">
-      <span class="icon">📖</span>
-      <h3>Story Mode</h3>
-      <p>Write a multi-sentence story → auto-split into scenes → coherent video with transitions.</p>
-      <span class="badge badge-gen">Pipeline</span>
-    </a>
-    <a href="create.html#tryon" class="feature-card glass">
-      <span class="icon">👗</span>
-      <h3>Virtual Try-On</h3>
-      <p>Upload person + garment → video wearing the new outfit. 5 categories auto-detected.</p>
-      <span class="badge badge-gen">Pipeline</span>
-    </a>
-    <a href="create.html#compose" class="feature-card glass">
-      <span class="icon">🎨</span>
-      <h3>Multi-Image Compose</h3>
-      <p>Combine 2-8 reference images into one video. Use @Image 1, @Image 2 in your prompt.</p>
-      <span class="badge badge-gen">Pipeline</span>
-    </a>
-    <a href="create.html#style" class="feature-card glass">
-      <span class="icon">🎭</span>
-      <h3>Style Transfer</h3>
-      <p>Ghibli, Pixar, Comic, Noir, Cyberpunk, Ukiyo-e, Impressionist, Watercolor, Oil, Vintage Film.</p>
-      <span class="badge badge-new">10 Styles</span>
-    </a>
-    <a href="create.html#ab" class="feature-card glass">
-      <span class="icon">🔬</span>
-      <h3>A/B Testing</h3>
-      <p>Compare multiple styles, prompts, or seed variations side by side. Pick the best one.</p>
-      <span class="badge badge-new">New</span>
-    </a>
-    <a href="gallery.html" class="feature-card glass">
-      <span class="icon">🖼️</span>
-      <h3>Gallery</h3>
-      <p>Browse, search, tag, favorite, and export your generated videos. Persistent history.</p>
-      <span class="badge badge-tool">Tool</span>
-    </a>
-    <a href="create.html#export" class="feature-card glass">
-      <span class="icon">📦</span>
-      <h3>Export & Post-Process</h3>
-      <p>GIF, WebM, storyboard, social formats (9:16, 1:1). Upscale, color grade, slow-mo, watermark.</p>
-      <span class="badge badge-tool">Tool</span>
-    </a>
-    <div class="feature-card glass">
-      <span class="icon">📝</span>
-      <h3>Prompt Templates</h3>
-      <p>25+ ready-to-use templates: runway walks, camera orbits, emotional scenes, story arcs.</p>
-      <span class="badge badge-tool">25+ Templates</span>
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">🎬 Generation Pipelines</h2>
+      <p class="section-desc">Six powerful AI video generation modes — from single animation to multi-scene storytelling.</p>
+      <div class="grid grid-3">
+        <a href="create.html" class="glass card" style="text-decoration:none;color:inherit">
+          <span class="feature-icon">📸</span>
+          <div class="feature-title">Animate</div>
+          <div class="feature-desc">Photo + prompt → animated video. One person, any action, any location.</div>
+          <span class="badge badge-purple" style="margin-top:12px">Pipeline</span>
+        </a>
+        <a href="create.html" class="glass card" style="text-decoration:none;color:inherit">
+          <span class="feature-icon">📖</span>
+          <div class="feature-title">Story Mode</div>
+          <div class="feature-desc">Multi-sentence narrative → auto-split scenes → coherent video with transitions.</div>
+          <span class="badge badge-purple" style="margin-top:12px">Pipeline</span>
+        </a>
+        <a href="create.html" class="glass card" style="text-decoration:none;color:inherit">
+          <span class="feature-icon">👗</span>
+          <div class="feature-title">Virtual Try-On</div>
+          <div class="feature-desc">Person + garment → dressed walking video. Auto category detection, 5 types.</div>
+          <span class="badge badge-pink" style="margin-top:12px">Pipeline</span>
+        </a>
+        <a href="create.html" class="glass card" style="text-decoration:none;color:inherit">
+          <span class="feature-icon">🎨</span>
+          <div class="feature-title">Multi-Image Compose</div>
+          <div class="feature-desc">Combine 2-8 reference images. Use @Image 1, @Image 2 in your prompt.</div>
+          <span class="badge badge-purple" style="margin-top:12px">Pipeline</span>
+        </a>
+        <a href="create.html" class="glass card" style="text-decoration:none;color:inherit">
+          <span class="feature-icon">🎭</span>
+          <div class="feature-title">Style Transfer</div>
+          <div class="feature-desc">Ghibli · Pixar · Comic · Noir · Cyberpunk · Ukiyo-e · Impressionist · Watercolor · Oil · Vintage</div>
+          <span class="badge badge-pink" style="margin-top:12px">10 Styles</span>
+        </a>
+        <a href="create.html" class="glass card" style="text-decoration:none;color:inherit">
+          <span class="feature-icon">🔬</span>
+          <div class="feature-title">A/B Testing</div>
+          <div class="feature-desc">Compare styles, prompts, seeds side-by-side. Pick the best variant.</div>
+          <span class="badge badge-emerald" style="margin-top:12px">Analyze</span>
+        </a>
+      </div>
     </div>
-    <div class="feature-card glass">
-      <span class="icon">🌍</span>
-      <h3>8 Languages</h3>
-      <p>UI and prompts in English, French, Chinese, Japanese, Spanish, Arabic, Korean, Portuguese.</p>
-      <span class="badge badge-infra">i18n</span>
-    </div>
-    <a href="monitor.html" class="feature-card glass">
-      <span class="icon">📊</span>
-      <h3>Monitoring</h3>
-      <p>Live dashboard with GPU status, request metrics, latencies, cache stats, analytics.</p>
-      <span class="badge badge-infra">Dashboard</span>
-    </a>
-    <div class="feature-card glass">
-      <span class="icon">🔌</span>
-      <h3>Extensible</h3>
-      <p>Plugin system, webhooks, REST API, Python SDK, Docker. Build integrations on top.</p>
-      <span class="badge badge-infra">API & SDK</span>
-    </div>
-  </div>
-</section>
+  </section>
 
-<!-- CTA -->
-<section class="cta">
-  <h2>Ready to Create?</h2>
-  <p>Install in 3 commands. Run locally on your RTX 4090 or deploy to the cloud.</p>
-  <code>git clone https://github.com/yourname/fitstream.git
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">🔧 Infrastructure & Tools</h2>
+      <p class="section-desc">Production-ready platform with everything you need to build on top.</p>
+      <div class="grid grid-4">
+        <div class="glass card"><span class="feature-icon">⭐</span><div class="feature-title">Gallery</div><div class="feature-desc">Search, tag, favorite, collections, thumbnails, persistent history.</div></div>
+        <div class="glass card"><span class="feature-icon">📦</span><div class="feature-title">Export</div><div class="feature-desc">GIF, WebM, storyboard, social formats. Upscale, color grade, watermark.</div></div>
+        <div class="glass card"><span class="feature-icon">📝</span><div class="feature-title">Templates</div><div class="feature-desc">25+ ready prompts: runway walks, camera orbit, emotions, story arcs.</div></div>
+        <div class="glass card"><span class="feature-icon">🌍</span><div class="feature-title">i18n</div><div class="feature-desc">EN FR ZH JA ES AR KO PT. UI messages and prompt translation.</div></div>
+        <a href="monitor.html" class="glass card" style="text-decoration:none;color:inherit"><span class="feature-icon">📊</span><div class="feature-title">Monitoring</div><div class="feature-desc">GPU, latencies p50/p95, cache hit-rate, analytics, job tracking.</div></a>
+        <div class="glass card"><span class="feature-icon">🔌</span><div class="feature-title">Extensible</div><div class="feature-desc">Plugin system, webhooks, REST API, Python SDK, Docker, mobile API.</div></div>
+        <div class="glass card"><span class="feature-icon">⚡</span><div class="feature-title">Real-Time</div><div class="feature-desc">WebSocket progress, FashionChameleon-ready streaming at 23.8 FPS.</div></div>
+        <div class="glass card"><span class="feature-icon">🛒</span><div class="feature-title">E-Commerce</div><div class="feature-desc">Shopify integration. Auto try-on videos for product catalogs.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="text-align:center">
+    <h2 class="section-title" style="text-align:center">Deploy in 3 Commands</h2>
+    <p class="section-desc" style="text-align:center;margin:0 auto 24px">Run locally on your RTX 4090 or deploy to any cloud GPU instance.</p>
+    <div class="code-block">git clone https://github.com/yourname/fitstream.git
 cd fitstream && bash scripts/setup.sh
-python scripts/download_models.py --model vace-1.3b</code>
-  <div class="hero-actions">
-    <a href="create.html" class="btn btn-primary">🎬 Open Creator Studio</a>
-    <a href="/docs" class="btn btn-secondary" target="_blank">📖 API Documentation</a>
-  </div>
-</section>
+python scripts/download_models.py --model vace-1.3b</div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="create.html" class="btn btn-primary">🎬 Start Creating</a>
+      <a href="/docs" class="btn btn-secondary" target="_blank">📖 API Docs</a>
+    </div>
+  </section>
+</main>
 
 <footer>
-  <p>FitStream v0.2.0 · Built with Wan VACE, LoomVideo & ❤️ · <a href="/docs">API Docs</a> · <a href="monitor.html">Monitor</a></p>
+  FitStream v0.2.0 · Wan VACE & LoomVideo · <a href="/docs">API</a> · <a href="monitor.html">Monitor</a> · MIT License
 </footer>
 
 <script>
-async function checkGPU(){
+(async function(){
   try{
-    const r=await fetch(window.location.origin+'/health');
-    const d=await r.json();
-    const b=document.getElementById('gpuBadge');
-    if(d.gpu&&d.gpu.available){b.textContent=`🟢 ${d.gpu.gpu_name}`;b.classList.add('online')}
-    else{b.textContent='🔴 No GPU'}
-  }catch(e){document.getElementById('gpuBadge').textContent='⚪ API offline'}
-}
-checkGPU();
+    const r=await fetch('/health');const d=await r.json();
+    const s=document.getElementById('gpuStatus');
+    if(d.gpu?.available){
+      s.textContent=`🟢 ${d.gpu.gpu_name||'GPU'} (${d.gpu.free_gb||'?'}GB free)`;
+      s.classList.add('online');
+    }else{s.textContent='🔴 No GPU detected'}
+  }catch(e){document.getElementById('gpuStatus').textContent='⚪ API offline'}
+})();
 </script>
 </body>
 </html>
