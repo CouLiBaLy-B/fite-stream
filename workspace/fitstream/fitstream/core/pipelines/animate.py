@@ -19,6 +19,7 @@ from fitstream.core.utils.image_utils import load_and_prepare_image
 from fitstream.core.utils.video_utils import save_video
 from fitstream.core.utils.prompt_utils import enhance_prompt
 from fitstream.core.interfaces import GenerationRequest, GenerationResult
+from fitstream.core.pipelines.base import BasePipeline
 
 
 @dataclass
@@ -35,7 +36,7 @@ class AnimateResult:
     error: Optional[str] = None
 
 
-class AnimatePipeline:
+class AnimatePipeline(BasePipeline):
     """
     Main animation pipeline.
     Takes a reference image + prompt and generates a video.
@@ -48,8 +49,7 @@ class AnimatePipeline:
         config: Optional[FitStreamConfig] = None,
         model_manager: Optional[ModelManager] = None,
     ) -> None:
-        self.config = config or get_config()
-        self.model_manager = model_manager or ModelManager(self.config)
+        super().__init__(config, model_manager)
         self._pipe = None
     
     def _ensure_model_loaded(self):
@@ -57,6 +57,34 @@ class AnimatePipeline:
         if self._pipe is None:
             self._pipe = self.model_manager.load_vace_diffusers()
         return self._pipe
+    
+    def _execute(self, request: GenerationRequest) -> GenerationResult:
+        """Implement BasePipeline._execute — delegate to generate()."""
+        result = self.generate(
+            image_path=request.image_paths[0] if request.image_paths else "",
+            prompt=request.prompt,
+            width=request.width,
+            height=request.height,
+            num_frames=request.num_frames,
+            fps=request.fps,
+            num_inference_steps=request.num_inference_steps,
+            guidance_scale=request.guidance_scale,
+            seed=request.seed,
+            style=request.style,
+            preset=request.preset,
+        )
+        return GenerationResult(
+            success=result.success,
+            video_path=result.video_path,
+            error=result.error,
+            num_frames=result.num_frames,
+            duration_seconds=result.duration_seconds,
+            resolution=result.resolution,
+            generation_time=result.generation_time,
+            seed=result.seed,
+            prompt_used=result.prompt_used,
+            pipeline=self.pipeline_name,
+        )
     
     def generate(
         self,

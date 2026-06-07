@@ -27,6 +27,7 @@ from loguru import logger
 from fitstream.config import FitStreamConfig, get_config
 from fitstream.core.models.model_manager import ModelManager
 from fitstream.core.utils.video_utils import save_video, concatenate_videos, get_video_info
+from fitstream.core.pipelines.base import BasePipeline
 
 
 @dataclass
@@ -41,7 +42,7 @@ class ExtendResult:
     error: Optional[str] = None
 
 
-class ExtendPipeline:
+class ExtendPipeline(BasePipeline):
     """
     Temporal extension pipeline.
     
@@ -53,11 +54,22 @@ class ExtendPipeline:
     2. Last-frame-as-reference (fallback, uses I2V with last frame)
     """
     pipeline_name: str = "extend"
+    def _execute(self, request):
+        """Implement BasePipeline._execute — delegate to extend()."""
+        result = self.extend(
+            video_path=request.extra.get('video_path', ''),
+            prompt=request.prompt,
+            additional_frames=request.extra.get('additional_frames', 49),
+        )
+        return __import__('fitstream.core.interfaces', fromlist=['GenerationResult']).GenerationResult(
+            success=result.success, video_path=result.video_path,
+            error=result.error, pipeline=self.pipeline_name,
+            generation_time=getattr(result, 'generation_time', 0),
+            num_frames=getattr(result, 'num_frames', 0),
+        )
 
-    
     def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
-        self.config = config or get_config()
-        self.model_manager = model_manager or ModelManager(self.config)
+        super().__init__(config, model_manager)
     
     def extend(
         self,

@@ -27,6 +27,7 @@ from fitstream.core.utils.prompt_utils import (
     create_story_summary,
     Scene,
 )
+from fitstream.core.pipelines.base import BasePipeline
 
 
 @dataclass
@@ -46,7 +47,7 @@ class StoryResult:
         return sum(1 for r in self.scene_results if r.success)
 
 
-class StoryPipeline:
+class StoryPipeline(BasePipeline):
     """
     Multi-scene story generation pipeline.
     
@@ -73,11 +74,26 @@ class StoryPipeline:
         )
     """
     pipeline_name: str = "story"
+    def _execute(self, request):
+        """Implement BasePipeline._execute — delegate to generate()."""
+        result = self.generate(
+            image_path=request.image_paths[0] if request.image_paths else '',
+            story=request.prompt,
+            style=request.style,
+            preset=request.preset,
+            max_scenes=request.extra.get('max_scenes', 5),
+            transition=request.extra.get('transition', 'crossfade'),
+        )
+        return __import__('fitstream.core.interfaces', fromlist=['GenerationResult']).GenerationResult(
+            success=result.success, video_path=result.video_path,
+            error=result.error, pipeline=self.pipeline_name,
+            generation_time=getattr(result, 'generation_time', 0),
+            num_frames=getattr(result, 'num_frames', 0),
+            seed=getattr(result, 'seed', 0),
+        )
 
-    
     def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
-        self.config = config or get_config()
-        self.model_manager = model_manager or ModelManager(self.config)
+        super().__init__(config, model_manager)
         self.animate_pipeline = AnimatePipeline(self.config, self.model_manager)
     
     def generate(

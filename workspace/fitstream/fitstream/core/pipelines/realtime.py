@@ -53,6 +53,7 @@ from fitstream.config import FitStreamConfig, get_config
 from fitstream.core.models.model_manager import ModelManager
 from fitstream.core.utils.image_utils import load_and_prepare_image
 from fitstream.core.utils.video_utils import save_video
+from fitstream.core.pipelines.base import BasePipeline
 
 
 @dataclass
@@ -93,7 +94,7 @@ class RealTimeResult:
     error: Optional[str] = None
 
 
-class RealTimePipeline:
+class RealTimePipeline(BasePipeline):
     """
     Real-time video generation pipeline.
     
@@ -108,16 +109,26 @@ class RealTimePipeline:
       - Still useful for quick previews
     """
     pipeline_name: str = "realtime"
+    def _execute(self, request):
+        """Implement BasePipeline._execute — delegate to generate_fast()."""
+        result = self.generate_fast(
+            image_path=request.image_paths[0] if request.image_paths else '',
+            prompt=request.prompt,
+            seed=request.seed,
+        )
+        return __import__('fitstream.core.interfaces', fromlist=['GenerationResult']).GenerationResult(
+            success=result.success, video_path=result.video_path,
+            error=result.error, pipeline=self.pipeline_name,
+            generation_time=getattr(result, 'generation_time', 0),
+        )
 
-    
     def __init__(
         self,
         config: FitStreamConfig = None,
         model_manager: ModelManager = None,
         rt_config: RealTimeConfig = None,
     ) -> None:
-        self.config = config or get_config()
-        self.model_manager = model_manager or ModelManager(self.config)
+        super().__init__(config, model_manager)
         self.rt_config = rt_config or RealTimeConfig()
         
         # Check for FashionChameleon weights

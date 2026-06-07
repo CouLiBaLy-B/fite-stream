@@ -151,7 +151,7 @@ async def mobile_templates(category: Optional[str] = None) -> list:
 
 
 def _save_base64(b64: str) -> str:
-    """📱 Flat template list."""
+    """Decode a base64 image string and save it to the upload directory."""
     try:
         if "," in b64:
             b64 = b64.split(",", 1)[1]

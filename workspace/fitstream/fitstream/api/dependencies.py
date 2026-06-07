@@ -19,63 +19,62 @@ Usage in routes:
 """
 
 import os
+import shutil
+import uuid
 from functools import lru_cache
 from typing import Optional
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, UploadFile
 from loguru import logger
 
 from fitstream.config import FitStreamConfig, get_config
 from fitstream.core.models.model_manager import ModelManager
 from fitstream.core.job_queue import JobQueue, JobStatus
+from fitstream.core.interfaces import validate_image_upload
 from fitstream.api.middleware import rate_limiter, api_auth, metrics
 
 
 # ═══════════════════════════════════════════════════════════
-# Singleton instances (created once, injected everywhere)
+# Paths (constants)
 # ═══════════════════════════════════════════════════════════
-
-_config: Optional[FitStreamConfig] = None
-_model_manager: Optional[ModelManager] = None
-_job_queue: Optional[JobQueue] = None
 
 UPLOAD_DIR = "./uploads"
 OUTPUT_DIR = "./outputs"
 
 
 def _ensure_dirs() -> None:
+    """Create required directories if they don't exist."""
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs("./jobs", exist_ok=True)
 
 
+# ═══════════════════════════════════════════════════════════
+# Singleton dependencies — cached via @lru_cache
+# No global mutable state — thread-safe and testable
+# ═══════════════════════════════════════════════════════════
+
+@lru_cache(maxsize=1)
 def get_app_config() -> FitStreamConfig:
-    """Get the application config (singleton)."""
-    global _config
-    if _config is None:
-        _config = get_config()
-    return _config
+    """Get the application config (cached singleton)."""
+    return get_config()
 
 
+@lru_cache(maxsize=1)
 def get_model_manager() -> ModelManager:
-    """Get the model manager (singleton, lazy init)."""
-    global _model_manager
-    if _model_manager is None:
-        _model_manager = ModelManager(get_app_config())
-    return _model_manager
+    """Get the model manager (cached singleton, lazy init)."""
+    return ModelManager(get_app_config())
 
 
+@lru_cache(maxsize=1)
 def get_job_queue() -> JobQueue:
-    """Get the persistent job queue (singleton)."""
-    global _job_queue
-    if _job_queue is None:
-        _ensure_dirs()
-        _job_queue = JobQueue(persist_dir="./jobs")
-    return _job_queue
+    """Get the persistent job queue (cached singleton)."""
+    _ensure_dirs()
+    return JobQueue(persist_dir="./jobs")
 
 
 def get_upload_dir() -> str:
-    """Get upload dir."""
+    """Get the upload directory, ensuring it exists."""
     _ensure_dirs()
     return UPLOAD_DIR
 
@@ -115,13 +114,6 @@ async def optional_auth(request: Request) -> Optional[str]:
 # ═══════════════════════════════════════════════════════════
 # Helper: save uploaded file
 # ═══════════════════════════════════════════════════════════
-
-import shutil
-import uuid
-from fastapi import UploadFile
-
-from fitstream.core.interfaces import validate_image_upload
-
 
 async def save_upload(
     file: UploadFile,

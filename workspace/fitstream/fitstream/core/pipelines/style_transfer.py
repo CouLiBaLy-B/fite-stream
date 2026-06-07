@@ -38,6 +38,7 @@ from fitstream.core.models.model_manager import ModelManager
 from fitstream.core.utils.image_utils import load_and_prepare_image
 from fitstream.core.utils.video_utils import save_video
 from fitstream.core.utils.prompt_utils import enhance_prompt
+from fitstream.core.pipelines.base import BasePipeline
 
 
 # Pre-defined style presets with associated prompt modifiers and negative prompts
@@ -145,7 +146,7 @@ def get_style_prompt(
     return f"{style} style, {base_prompt}"
 
 
-class StyleTransferPipeline:
+class StyleTransferPipeline(BasePipeline):
     """
     Style transfer pipeline for artistic video generation.
     
@@ -156,11 +157,24 @@ class StyleTransferPipeline:
     4. Video restyling (keep motion, change aesthetics)
     """
     pipeline_name: str = "style_transfer"
+    def _execute(self, request):
+        """Implement BasePipeline._execute — delegate to generate_with_style()."""
+        result = self.generate_with_style(
+            person_image=request.image_paths[0] if request.image_paths else '',
+            prompt=request.prompt,
+            style=request.style,
+            custom_style=request.extra.get('custom_style', ''),
+            preset=request.preset,
+            seed=request.seed,
+        )
+        return __import__('fitstream.core.interfaces', fromlist=['GenerationResult']).GenerationResult(
+            success=result.success, video_path=result.video_path,
+            error=result.error, pipeline=self.pipeline_name,
+            generation_time=getattr(result, 'generation_time', 0),
+        )
 
-    
     def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
-        self.config = config or get_config()
-        self.model_manager = model_manager or ModelManager(self.config)
+        super().__init__(config, model_manager)
     
     @staticmethod
     def list_styles() -> dict:

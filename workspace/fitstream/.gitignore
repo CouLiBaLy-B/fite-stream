@@ -40,7 +40,7 @@ junit-results.xml
 # ============================================================
 
 # AI model weights (download via scripts/download_models.py)
-models/
+/models/
 *.safetensors
 *.bin
 *.ckpt

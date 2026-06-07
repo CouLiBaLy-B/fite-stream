@@ -14,6 +14,7 @@ Usage:
 """
 
 from contextlib import asynccontextmanager
+import os
 from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,36 +35,50 @@ from fitstream.api.routes.jobs import router as jobs_router
 from fitstream.api.routes.admin import router as admin_router
 
 
+def _get_cors_origins() -> list[str]:
+    """Resolve CORS allowed origins from environment or use safe defaults."""
+    env_origins = os.environ.get("FITSTREAM_CORS_ORIGINS", "")
+    if env_origins:
+        return [o.strip() for o in env_origins.split(",") if o.strip()]
+    # Default: allow localhost dev servers
+    return [
+        "http://localhost:8000",
+        "http://localhost:8501",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:8501",
+    ]
+
+
 def create_app() -> FastAPI:
     """
     Application factory — creates a fully configured FastAPI app.
-    
+
     This follows the factory pattern for testability:
       - Dependencies are injected via FastAPI Depends()
       - No global mutable state
       - Each router handles its own domain
       - Middleware is configured centrally
     """
-    
+
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> None:
-        logger.info(f"🎬 FitStream API v{__version__} starting")
+        logger.info(f"FitStream API v{__version__} starting")
         yield
-        logger.info("🎬 FitStream API shutting down gracefully")
-    
+        logger.info("FitStream API shutting down gracefully")
+
     app = FastAPI(
         title="FitStream API",
-        description="🎬 Animation Storytelling & Virtual Try-On API",
+        description="Animation Storytelling & Virtual Try-On API",
         version=__version__,
         docs_url="/docs",
         redoc_url="/redoc",
         lifespan=lifespan,
     )
-    
+
     # ── Middleware ──
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # TODO: restrict in production via config
+        allow_origins=_get_cors_origins(),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -84,9 +99,8 @@ def create_app() -> FastAPI:
     # ── Root ──
     @app.get("/", tags=["Health"])
     async def root() -> dict:
-        """Lifespan."""
-        """Root."""
-        return {"message": "🎬 FitStream API", "version": __version__, "docs": "/docs"}
+        """Root health-check endpoint returning API info."""
+        return {"message": "FitStream API", "version": __version__, "docs": "/docs"}
     
     # ── WebSocket ──
     @app.websocket("/ws/jobs/{job_id}")
@@ -113,12 +127,11 @@ def create_app() -> FastAPI:
     }
     
     for route, filename in _pages.items():
-        """Websocket progress."""
         filepath = _frontend_dir / filename
         # Create closure properly
         def _make_handler(p: Path):
             async def handler():
-                """Handler."""
+                """Serve a static frontend page."""
                 if p.exists():
                     return FileResponse(p, media_type="text/html")
                 return HTMLResponse("<h1>Page not found</h1>", status_code=404)

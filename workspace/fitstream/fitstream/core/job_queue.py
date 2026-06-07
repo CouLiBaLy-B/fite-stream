@@ -149,6 +149,7 @@ class JobQueue:
                 self._persist_job(job)
     
     def update_progress(self, job_id: str, progress: float, message: str = "") -> None:
+        """Update job progress (0.0 to 1.0) with an optional status message."""
         with self._lock:
             job = self._jobs.get(job_id)
             if job:
@@ -163,8 +164,7 @@ class JobQueue:
         video_path: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Update job progress (0.0 to 1.0)."""
-        """Mark a job as completed."""
+        """Mark a job as completed with the generated video path."""
         with self._lock:
             job = self._jobs.get(job_id)
             if job:
@@ -195,8 +195,7 @@ class JobQueue:
         job_type: Optional[str] = None,
         limit: int = 50,
     ) -> List[Job]:
-        """Mark a job as failed."""
-        """List jobs with optional filters."""
+        """List jobs with optional status/type filters, newest first."""
         with self._lock:
             jobs = list(self._jobs.values())
         
@@ -225,8 +224,7 @@ class JobQueue:
             logger.info(f"🧹 Cleaned up {len(to_remove)} old jobs")
     
     def _enforce_limit(self) -> None:
-        """Remove jobs older than max_age_hours."""
-        """Remove oldest completed/failed jobs if over limit."""
+        """Remove oldest completed/failed jobs if over the max limit."""
         if len(self._jobs) <= self._max_jobs:
             return
         

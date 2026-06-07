@@ -33,14 +33,14 @@ class ConnectionManager:
         logger.debug(f"WS connected: job {job_id} ({len(self._connections[job_id])} clients)")
     
     def disconnect(self, websocket: WebSocket, job_id: str) -> None:
-        """Accept a new WebSocket connection for a job."""
+        """Remove a WebSocket connection from tracking."""
         if job_id in self._connections:
             self._connections[job_id].discard(websocket)
             if not self._connections[job_id]:
                 del self._connections[job_id]
     
     async def broadcast_to_job(self, job_id: str, data: dict) -> None:
-        """Remove a WebSocket connection."""
+        """Send a message to all WebSocket clients watching a job."""
         if job_id not in self._connections:
             return
         
@@ -65,7 +65,6 @@ class ConnectionManager:
         message: str = "",
         **extra,
     ) -> None:
-        """Send a message to all WebSocket clients watching a job."""
         """Convenience method to broadcast a progress update."""
         await self.broadcast_to_job(job_id, {
             "type": "progress",
@@ -107,8 +106,7 @@ class ConnectionManager:
     
     @property
     def active_connections(self) -> int:
-        """Broadcast job failure."""
-        """Active connections."""
+        """Total number of active WebSocket connections across all jobs."""
         return sum(len(conns) for conns in self._connections.values())
     
     @property

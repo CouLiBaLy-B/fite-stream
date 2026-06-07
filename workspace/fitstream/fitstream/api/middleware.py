@@ -48,9 +48,19 @@ class RateLimiter:
         self._gen_requests: Dict[str, list] = defaultdict(list)
     
     def _cleanup(self, timestamps: list, window: float = 60.0) -> None:
+        """Remove expired timestamps from the list."""
         cutoff = time.time() - window
         while timestamps and timestamps[0] < cutoff:
             timestamps.pop(0)
+    
+    def _cleanup_empty_entries(self) -> None:
+        """Periodically remove client entries that have no active timestamps."""
+        for bucket in [self._requests, self._gen_requests]:
+            empty_clients = [
+                cid for cid, ts in list(bucket.items()) if not ts
+            ]
+            for cid in empty_clients:
+                del bucket[cid]
     
     def allow(self, client_id: str) -> bool:
         now = time.time()
@@ -77,6 +87,8 @@ class RateLimiter:
     def get_remaining(self, client_id: str) -> Dict[str, int]:
         self._cleanup(self._requests[client_id])
         self._cleanup(self._gen_requests[client_id])
+        # Clean up empty entries to prevent memory leak
+        self._cleanup_empty_entries()
         
         return {
             "requests_remaining": max(0, self.rpm - len(self._requests[client_id])),

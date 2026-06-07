@@ -35,6 +35,7 @@ from fitstream.config import FitStreamConfig, get_config
 from fitstream.core.models.model_manager import ModelManager
 from fitstream.core.utils.video_utils import save_video, get_video_info
 from fitstream.core.pipelines.style_transfer import STYLE_PRESETS, get_style_prompt
+from fitstream.core.pipelines.base import BasePipeline
 
 
 @dataclass
@@ -54,7 +55,7 @@ class V2VResult:
     error: Optional[str] = None
 
 
-class V2VRestylePipeline:
+class V2VRestylePipeline(BasePipeline):
     """
     Video-to-video restyling pipeline.
     
@@ -74,8 +75,20 @@ class V2VRestylePipeline:
     - Extreme (cyberpunk, ukiyo-e): 0.7-0.9
     """
     pipeline_name: str = "v2v_restyle"
+    def _execute(self, request):
+        """Implement BasePipeline._execute — delegate to restyle()."""
+        result = self.restyle(
+            video_path=request.extra.get('video_path', ''),
+            style=request.style,
+            prompt=request.prompt,
+            strength=request.extra.get('strength'),
+        )
+        return __import__('fitstream.core.interfaces', fromlist=['GenerationResult']).GenerationResult(
+            success=result.success, video_path=result.video_path,
+            error=result.error, pipeline=self.pipeline_name,
+            generation_time=getattr(result, 'generation_time', 0),
+        )
 
-    
     RECOMMENDED_STRENGTHS = {
         "warm": 0.4, "cool": 0.4, "vintage_film": 0.5,
         "impressionist": 0.6, "watercolor": 0.6, "oil_painting": 0.6,
@@ -84,8 +97,7 @@ class V2VRestylePipeline:
     }
     
     def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
-        self.config = config or get_config()
-        self.model_manager = model_manager or ModelManager(self.config)
+        super().__init__(config, model_manager)
     
     def restyle(
         self,

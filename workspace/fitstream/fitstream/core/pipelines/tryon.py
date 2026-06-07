@@ -25,6 +25,7 @@ from fitstream.core.models.model_manager import ModelManager
 from fitstream.core.utils.image_utils import load_and_prepare_image
 from fitstream.core.utils.video_utils import save_video
 from fitstream.core.utils.prompt_utils import enhance_prompt
+from fitstream.core.pipelines.base import BasePipeline
 
 
 @dataclass
@@ -120,7 +121,7 @@ def build_tryon_prompt(
     return enhance_prompt(base_prompt, style=style, quality_suffix=True)
 
 
-class TryOnPipeline:
+class TryOnPipeline(BasePipeline):
     """
     Virtual try-on pipeline.
     
@@ -137,11 +138,27 @@ class TryOnPipeline:
         )
     """
     pipeline_name: str = "tryon"
+    def _execute(self, request):
+        """Implement BasePipeline._execute — delegate to generate()."""
+        result = self.generate(
+            person_image=request.image_paths[0] if len(request.image_paths) > 0 else '',
+            garment_image=request.image_paths[1] if len(request.image_paths) > 1 else '',
+            prompt=request.prompt,
+            category=request.extra.get('category', 'auto'),
+            action=request.extra.get('action', 'walking naturally'),
+            style=request.style,
+            preset=request.preset,
+            seed=request.seed,
+        )
+        return __import__('fitstream.core.interfaces', fromlist=['GenerationResult']).GenerationResult(
+            success=result.success, video_path=result.video_path,
+            error=result.error, pipeline=self.pipeline_name,
+            generation_time=getattr(result, 'generation_time', 0),
+            num_frames=getattr(result, 'num_frames', 0),
+        )
 
-    
     def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
-        self.config = config or get_config()
-        self.model_manager = model_manager or ModelManager(self.config)
+        super().__init__(config, model_manager)
         self._pipe = None
     
     def _ensure_model_loaded(self):

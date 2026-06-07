@@ -43,9 +43,10 @@ from fitstream.core.utils.image_utils import load_and_prepare_image
 from fitstream.core.utils.video_utils import save_video
 from fitstream.core.utils.prompt_utils import enhance_prompt
 from fitstream.core.pipelines.loom import LoomResult, validate_image_references
+from fitstream.core.pipelines.base import BasePipeline
 
 
-class LoomNativePipeline:
+class LoomNativePipeline(BasePipeline):
     """
     Native LoomVideo pipeline using Diffusers.
     
@@ -62,11 +63,21 @@ class LoomNativePipeline:
     Falls back to VACE when LoomVideo weights unavailable.
     """
     pipeline_name: str = "loom_native"
+    def _execute(self, request):
+        """Implement BasePipeline._execute — delegate to generate_native()."""
+        result = self.generate_native(
+            images=request.image_paths,
+            prompt=request.prompt,
+            num_frames=request.num_frames,
+        )
+        return __import__('fitstream.core.interfaces', fromlist=['GenerationResult']).GenerationResult(
+            success=result.success, video_path=result.video_path,
+            error=result.error, pipeline=self.pipeline_name,
+            generation_time=getattr(result, 'generation_time', 0),
+        )
 
-    
     def __init__(self, config: FitStreamConfig = None, model_manager: ModelManager = None) -> None:
-        self.config = config or get_config()
-        self.model_manager = model_manager or ModelManager(self.config)
+        super().__init__(config, model_manager)
         self._pipe = None
         self._mode = self._detect_mode()
     
